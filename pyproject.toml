@@ -1,0 +1,12 @@
+[project]
+name = "job-assistant"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+  "apps/backend",
+  "apps/frontend",
+  "packages/shared"
+]
