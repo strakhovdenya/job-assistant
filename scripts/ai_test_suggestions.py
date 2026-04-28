@@ -1,13 +1,14 @@
 from pathlib import Path
 import os
 import subprocess
+import sys
 
 from openai import OpenAI
 
 
 BASE_BRANCH = os.getenv("BASE_BRANCH", "origin/main")
 
-MODEL = "gpt-4.1-mini"
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 INPUT_PRICE_PER_1M = 0.40
 OUTPUT_PRICE_PER_1M = 1.60
@@ -68,7 +69,8 @@ def main() -> None:
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing")
+        print("OPENAI_API_KEY is not set")
+        sys.exit(1)
 
     client = OpenAI(api_key=api_key)
 
@@ -81,6 +83,9 @@ def main() -> None:
     diff = truncate_text(diff, MAX_DIFF_CHARS, "DIFF")
 
     changed_python_files = collect_changed_python_files()
+    if not changed_python_files:
+        print("No Python changes found.")
+        return
 
     changed_code_parts = []
 
