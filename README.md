@@ -222,6 +222,97 @@ uv run --package frontend streamlit run apps/frontend/app.py
 
 ---
 
+![Tests](https://github.com/strakhovdenya/job-assistant/actions/workflows/tests.yml/badge.svg)
+
+---
+
+## 🔁 CI & Code Quality
+
+Проект использует GitHub Actions для автоматической проверки:
+
+- запуск тестов при каждом Pull Request
+- AI code review
+- генерация рекомендаций по тестам
+
+---
+
+## 🧪 Tests
+
+Тесты написаны с использованием `pytest`.
+
+Структура:
+
+    tests/
+    └── scripts/
+        └── test_ai_scripts.py
+
+Покрываются:
+
+- `scripts/ai_review.py`
+- `scripts/ai_test_suggestions.py`
+- обработка `git diff`
+- environment variables
+- генерация AI-ответов через mock
+- вспомогательные функции
+
+Запуск всех тестов:
+
+    uv run pytest
+
+Запуск только тестов для AI-скриптов:
+
+    uv run pytest tests/scripts/test_ai_scripts.py
+
+---
+
+## ⚠️ Environment Variables
+
+Для работы AI-скриптов требуется переменная окружения:
+
+    OPENAI_API_KEY=your_key
+
+В тестах реальные вызовы OpenAI не используются.
+
+---
+
+## 🤖 AI Code Review
+
+`scripts/ai_review.py` анализирует `git diff` и возвращает структурированный review в формате:
+
+    ## Risk
+    ## Must fix
+    ## Nice to have
+    ## GPT follow-up prompt
+
+---
+
+## 🧪 AI Test Suggestions
+
+`scripts/ai_test_suggestions.py` анализирует изменения Python-кода и предлагает недостающие тест-кейсы в формате:
+
+    ## Test coverage risk
+    ## Existing coverage
+    ## Missing test cases
+    ## Notes
+
+---
+
+## ⚙️ CI Workflows
+
+`.github/workflows/tests.yml` запускает тесты:
+
+    uv run pytest
+
+`.github/workflows/ai-review.yml` добавляет AI review в Pull Request.
+
+---
+
+## 🧠 Notes
+
+- тесты не делают реальные API-вызовы
+- OpenAI используется только в runtime/CI
+- CI падает, если тесты не проходят
+
 ## 🧩 Philosophy
 
 1. Start simple
