@@ -16,6 +16,14 @@ class RawJob(Base):
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str] = mapped_column(String(100), nullable=False)
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+
+    processing_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="raw",
+        server_default="raw",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
