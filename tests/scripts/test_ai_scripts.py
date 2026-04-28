@@ -133,3 +133,41 @@ def test_ai_test_suggestions_handles_missing_openai_key(monkeypatch, capsys):
 
     assert exc.value.code == 1
     assert "OPENAI_API_KEY is not set" in captured.out
+
+def test_ai_test_suggestions_truncate_text_behavior():
+    assert ai_test_suggestions.truncate_text("short", 10, "TEXT") == "short"
+
+    result = ai_test_suggestions.truncate_text("abcdefghij", 5, "TEXT")
+
+    assert result == "abcde\n\n[TEXT TRUNCATED]"
+
+
+def test_ai_test_suggestions_collect_changed_python_files_filters_correctly():
+    with patch(
+        "scripts.ai_test_suggestions.run",
+        return_value=(
+            "app/main.py\n"
+            "tests/test_main.py\n"
+            "README.md\n"
+            "scripts/tool.py\n"
+        ),
+    ):
+        result = ai_test_suggestions.collect_changed_python_files()
+
+    assert result == ["app/main.py", "scripts/tool.py"]
+
+
+def test_ai_test_suggestions_collect_existing_test_file_names_no_dir(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    result = ai_test_suggestions.collect_existing_test_file_names()
+
+    assert result == "No tests directory found."
+
+def test_ai_test_suggestions_collect_existing_test_file_names_no_files(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "tests").mkdir()
+
+    result = ai_test_suggestions.collect_existing_test_file_names()
+
+    assert result == "No test files found."
