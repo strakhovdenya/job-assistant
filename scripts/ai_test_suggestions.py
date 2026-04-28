@@ -6,11 +6,27 @@ from openai import OpenAI
 
 
 BASE_BRANCH = os.getenv("BASE_BRANCH", "origin/main")
-MAX_TEST_FILES = 30
+
+MODEL = "gpt-4.1-mini"
+
+INPUT_PRICE_PER_1M = 0.40
+OUTPUT_PRICE_PER_1M = 1.60
+
+MAX_DIFF_CHARS = 12_000
+MAX_FILE_CHARS = 6_000
+MAX_TEST_FILES = 50
+MAX_OUTPUT_TOKENS = 400
 
 
 def run(cmd: list[str]) -> str:
     return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
+
+
+def truncate_text(text: str, max_chars: int, label: str) -> str:
+    if len(text) <= max_chars:
+        return text
+
+    return text[:max_chars] + f"\n\n[{label} TRUNCATED]"
 
 
 def read_file(path: str) -> str:
@@ -34,13 +50,18 @@ def collect_changed_python_files() -> list[str]:
     ]
 
 
-def collect_existing_tests() -> list[Path]:
+def collect_existing_test_file_names() -> str:
     tests_dir = Path("tests")
 
     if not tests_dir.exists():
-        return []
+        return "No tests directory found."
 
-    return sorted(tests_dir.rglob("test_*.py"))[:MAX_TEST_FILES]
+    test_files = sorted(tests_dir.rglob("test_*.py"))[:MAX_TEST_FILES]
+
+    if not test_files:
+        return "No test files found."
+
+    return "\n".join(str(path) for path in test_files)
 
 
 def main() -> None:
@@ -57,6 +78,8 @@ def main() -> None:
         print("No changes found.")
         return
 
+    diff = truncate_text(diff, MAX_DIFF_CHARS, "DIFF")
+
     changed_python_files = collect_changed_python_files()
 
     changed_code_parts = []
@@ -65,18 +88,10 @@ def main() -> None:
         content = read_file(file)
 
         if content:
+            content = truncate_text(content, MAX_FILE_CHARS, "FILE")
             changed_code_parts.append(
                 f"\n===== CHANGED FILE: {file} =====\n{content}\n"
             )
-
-    existing_test_parts = []
-
-    for test_file in collect_existing_tests():
-        content = test_file.read_text(encoding="utf-8", errors="ignore")
-
-        existing_test_parts.append(
-            f"\n===== EXISTING TEST FILE: {test_file} =====\n{content}\n"
-        )
 
     changed_code_text = (
         "\n".join(changed_code_parts)
@@ -84,29 +99,27 @@ def main() -> None:
         else "No changed Python files found."
     )
 
-    existing_tests_text = (
-        "\n".join(existing_test_parts)
-        if existing_test_parts
-        else "No existing tests found."
-    )
+    existing_test_files_text = collect_existing_test_file_names()
 
     prompt = f"""
 Ты senior Python QA engineer.
 
-Твоя задача — определить, каких тестов НЕ хватает в pull request.
+Твоя задача — определить, каких тест-кейсов НЕ хватает в pull request.
 
 Важно:
+- Не пиши полный код pytest-тестов.
+- Не генерируй test-файлы.
+- Дай только короткие рекомендации по тест-кейсам.
 - Не придумывай тесты только по diff.
-- Сравни изменения с уже существующими тестами.
-- Если кейс уже покрыт существующими тестами, не предлагай его.
+- Сравни изменения с доступным контекстом.
+- Если кейс уже очевидно покрыт существующим test-файлом по названию, не предлагай его.
 - Не выдумывай несуществующие функции, классы или API.
-- Предлагай только pytest-тесты.
 - Если тестов достаточно, так и напиши.
 
 Проанализируй:
 1. Git diff
-2. Полный код изменённых Python-файлов
-3. Уже существующие тесты из папки tests/
+2. Короткий контекст изменённых Python-файлов
+3. Список уже существующих test-файлов
 
 Верни ответ строго в таком формате:
 
@@ -116,15 +129,15 @@ Low / Medium / High
 
 ## Existing coverage
 
-Что уже покрыто существующими тестами.
+Что, судя по названиям test-файлов и diff, уже может быть покрыто.
 
-## Missing coverage
+## Missing test cases
 
-Какие кейсы не покрыты.
-
-## Suggested pytest tests
-
-Только новые тесты, которые действительно стоит добавить.
+Короткий список недостающих тест-кейсов.
+Для каждого:
+- proposed test name
+- what it should verify
+- why it matters
 
 ## Notes
 
@@ -136,17 +149,38 @@ Low / Medium / High
 ===== CHANGED PYTHON FILES =====
 {changed_code_text}
 
-===== EXISTING TESTS =====
-{existing_tests_text}
+===== EXISTING TEST FILES =====
+{existing_test_files_text}
 """
 
     response = client.responses.create(
-        model="gpt-4.1-mini",
+        model=MODEL,
         input=prompt,
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+    )
+
+    usage = response.usage
+
+    input_tokens = usage.input_tokens if usage else 0
+    output_tokens = usage.output_tokens if usage else 0
+    total_tokens = input_tokens + output_tokens
+
+    estimated_cost = (
+        input_tokens / 1_000_000 * INPUT_PRICE_PER_1M
+        + output_tokens / 1_000_000 * OUTPUT_PRICE_PER_1M
     )
 
     print(response.output_text)
 
+    print("\n---")
+    print("## Token usage")
+    print(f"Model: `{MODEL}`")
+    print(f"Input tokens: `{input_tokens}`")
+    print(f"Output tokens: `{output_tokens}`")
+    print(f"Total tokens: `{total_tokens}`")
+    print(f"Estimated cost: `${estimated_cost:.6f}`")
+
 
 if __name__ == "__main__":
     main()
+
