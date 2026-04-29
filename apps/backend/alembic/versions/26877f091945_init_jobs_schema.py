@@ -27,7 +27,15 @@ def upgrade() -> None:
     op.add_column('jobs', sa.Column('remote_type', sa.String(length=50), nullable=True))
     op.add_column('jobs', sa.Column('employment_type', sa.String(length=50), nullable=True))
     op.add_column('jobs', sa.Column('status', sa.String(length=50), server_default='new', nullable=False))
-    op.add_column('jobs', sa.Column('skills', postgresql.JSONB(astext_type=sa.Text()), server_default='[]', nullable=False))
+    op.add_column(
+        'jobs',
+        sa.Column(
+            'skills',
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'[]'::jsonb"),
+            nullable=False,
+        ),
+    )
     op.add_column('jobs', sa.Column('skills_source', sa.String(length=50), server_default='manual', nullable=False))
     op.add_column('jobs', sa.Column('description', sa.Text(), nullable=True))
     op.add_column('jobs', sa.Column('notes', sa.Text(), nullable=True))
