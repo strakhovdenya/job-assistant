@@ -39,7 +39,7 @@ def upgrade() -> None:
     op.add_column('jobs', sa.Column('skills_source', sa.String(length=50), server_default='manual', nullable=False))
     op.add_column('jobs', sa.Column('description', sa.Text(), nullable=True))
     op.add_column('jobs', sa.Column('notes', sa.Text(), nullable=True))
-    op.add_column('jobs', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
+    op.add_column('jobs', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False))
     op.add_column('jobs_raw', sa.Column('processing_status', sa.String(length=50), server_default='raw', nullable=False))
     # ### end Alembic commands ###
 

@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -13,12 +14,13 @@ from app.models.job import Job
 # access to the values within the .ini file in use.
 config = context.config
 
-import os
 
 database_url = os.getenv("DATABASE_URL")
 
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set. Alembic requires DATABASE_URL to run migrations.")
+
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
