@@ -257,7 +257,9 @@ Future: AI enrichment
 ## 🧠 Архитектурная логика
 
 Sprint 1 → ingestion  
-Sprint 2 → manual structuring  
+Sprint 2 → manual structuring
+- updated_at поддерживается на уровне приложения (SQLAlchemy), без DB triggers на этом этапе
+
 Sprint 3 → AI assistance  
 
 ---
@@ -323,10 +325,10 @@ Sprint 2 — это фундамент всей системы.
 
 ---
 
-- [ ] Создать и применить миграции:
-  - [ ] alembic revision
-  - [ ] alembic upgrade head
-  - [ ] проверить rollback
+- [x] Создать и применить миграции:
+  - [x] alembic revision
+  - [x] alembic upgrade head
+  - [x] проверить rollback
 
 ---
 
