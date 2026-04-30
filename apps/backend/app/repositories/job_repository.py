@@ -10,16 +10,13 @@ def create_from_raw(db: Session, raw_job: RawJob) -> Job:
         raw_job_id=raw_job.id,
         title=None,
         company=None,
-        status="draft",
+        status="new",
         skills=[],
         skills_source="manual",
         description=raw_job.raw_text,
     )
 
-    raw_job.processing_status = "structured"
-
     db.add(job)
-    db.add(raw_job)
     db.commit()
     db.refresh(job)
 

@@ -21,14 +21,15 @@ CONTEXT_LINES = int(os.getenv("CONTEXT_LINES", "40"))
 
 PROJECT_PATHS = tuple(
     path.strip().rstrip("/") + "/"
-    for path in os.getenv(
-        "PROJECT_PATHS",
-        "apps/backend,apps/frontend",
-    ).split(",")
+    for path in os.getenv("PROJECT_PATHS", "").split(",")
     if path.strip()
 )
 
 HUNK_RE = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+TEST_FUNCTION_RE = re.compile(
+    r"^\s*def\s+(test_[a-zA-Z0-9_]+)\s*\(",
+    re.MULTILINE,
+)
 
 
 def run(cmd: list[str]) -> str:
@@ -39,14 +40,7 @@ def truncate_text(text: str, max_chars: int, label: str) -> str:
     if len(text) <= max_chars:
         return text
 
-    head_chars = max_chars // 2
-    tail_chars = max_chars - head_chars
-
-    return (
-        text[:head_chars]
-        + f"\n\n[{label} TRUNCATED: MIDDLE REMOVED]\n\n"
-        + text[-tail_chars:]
-    )
+    return text[:max_chars] + f"\n\n[{label} TRUNCATED]"
 
 
 def read_file(path: str) -> str:
@@ -59,6 +53,9 @@ def read_file(path: str) -> str:
 
 
 def is_in_target_project(path: str) -> bool:
+    if not PROJECT_PATHS:
+        return True
+
     return path.startswith(PROJECT_PATHS)
 
 
@@ -178,7 +175,11 @@ def read_changed_context(
         return ""
 
     lines = content.splitlines()
-    changed_ranges = collect_changed_line_ranges(path)
+
+    try:
+        changed_ranges = collect_changed_line_ranges(path)
+    except Exception:
+        return truncate_text(content, MAX_FILE_CHARS, "FILE")
 
     if not changed_ranges:
         return truncate_text(content, MAX_FILE_CHARS, "FILE")
@@ -207,40 +208,49 @@ def read_changed_context(
     )
 
 
-def collect_existing_test_file_names(changed_files: list[str]) -> str:
+def collect_relevant_test_files(
+    changed_files: list[str] | None = None,
+) -> list[Path]:
     tests_dir = Path("tests")
 
     if not tests_dir.exists():
-        return "No tests directory found."
+        return []
 
     all_test_files = sorted(tests_dir.rglob("test_*.py"))
 
-    if not all_test_files:
-        return "No test files found."
+    if not changed_files:
+        return all_test_files[:MAX_TEST_FILES]
 
     keywords = set()
 
     if any(f.startswith("apps/backend/") for f in changed_files):
-        keywords.update([
-            "backend",
-            "api",
-            "service",
-            "db",
-            "model",
-            "schema",
-            "repository",
-        ])
+        keywords.update(
+            [
+                "backend",
+                "api",
+                "service",
+                "db",
+                "model",
+                "schema",
+                "repository",
+            ]
+        )
 
     if any(f.startswith("apps/frontend/") for f in changed_files):
-        keywords.update([
-            "frontend",
-            "ui",
-            "component",
-            "page",
-            "view",
-            "form",
-            "client",
-        ])
+        keywords.update(
+            [
+                "frontend",
+                "ui",
+                "component",
+                "page",
+                "view",
+                "form",
+                "client",
+            ]
+        )
+
+    if not keywords:
+        return all_test_files[:MAX_TEST_FILES]
 
     relevant = [
         path
@@ -253,7 +263,45 @@ def collect_existing_test_file_names(changed_files: list[str]) -> str:
     if not selected:
         selected = all_test_files[:MAX_TEST_FILES]
 
+    return selected
+
+
+def collect_existing_test_file_names(
+    changed_files: list[str] | None = None,
+) -> str:
+    selected = collect_relevant_test_files(changed_files)
+
+    if not selected:
+        return "No test files found."
+
     return "\n".join(str(path) for path in selected)
+
+
+def collect_existing_test_signatures(
+    changed_files: list[str] | None = None,
+) -> str:
+    selected = collect_relevant_test_files(changed_files)
+
+    if not selected:
+        return "No test files found."
+
+    parts = []
+
+    for path in selected:
+        content = read_file(str(path))
+        test_names = TEST_FUNCTION_RE.findall(content)
+
+        if not test_names:
+            continue
+
+        parts.append(
+            f"{path}\n" + "\n".join(f"- {name}" for name in test_names)
+        )
+
+    if not parts:
+        return "No test functions found."
+
+    return "\n\n".join(parts)
 
 
 def main() -> None:
@@ -268,7 +316,7 @@ def main() -> None:
     changed_python_files = collect_changed_python_files()
 
     if not changed_python_files:
-        print("No relevant Python changes found.")
+        print("No Python changes found.")
         return
 
     diff = collect_diff_for_files(changed_python_files)
@@ -296,6 +344,9 @@ def main() -> None:
     existing_test_files_text = collect_existing_test_file_names(
         changed_python_files
     )
+    existing_test_signatures_text = collect_existing_test_signatures(
+        changed_python_files
+    )
 
     prompt = f"""
 Ты senior Python QA engineer.
@@ -308,7 +359,10 @@ def main() -> None:
 - Дай только короткие рекомендации по тест-кейсам.
 - Не придумывай тесты только по diff.
 - Сравни изменения с доступным контекстом.
-- Если кейс уже очевидно покрыт существующим test-файлом по названию, не предлагай его.
+- Сначала проверь список существующих test-функций.
+- Если существующая test-функция уже покрывает поведение по смыслу, не предлагай этот тест повторно, даже если имя отличается от твоего preferred name.
+- Не требуй точного совпадения имени теста; оценивай покрытие по смыслу имени и проверяемому поведению.
+- Если кейс уже очевидно покрыт существующим test-файлом или test-функцией, не предлагай его.
 - Не выдумывай несуществующие функции, классы или API.
 - Если тестов достаточно, так и напиши.
 - Учитывай, что контекст файлов содержит только фрагменты вокруг изменённых строк, а не полный файл.
@@ -317,6 +371,7 @@ def main() -> None:
 1. Git diff только по релевантным файлам
 2. Фрагменты изменённых Python-файлов вокруг изменённых строк
 3. Список уже существующих test-файлов
+4. Список уже существующих test-функций
 
 Верни ответ строго в таком формате:
 
@@ -326,7 +381,7 @@ Low / Medium / High
 
 ## Existing coverage
 
-Что, судя по названиям test-файлов и diff, уже может быть покрыто.
+Что, судя по названиям test-файлов, test-функций и diff, уже может быть покрыто.
 
 ## Missing test cases
 
@@ -348,6 +403,9 @@ Low / Medium / High
 
 ===== EXISTING TEST FILES =====
 {existing_test_files_text}
+
+===== EXISTING TEST FUNCTIONS =====
+{existing_test_signatures_text}
 """
 
     response = client.responses.create(
@@ -375,7 +433,7 @@ Low / Medium / High
     print(f"Input tokens: `{input_tokens}`")
     print(f"Output tokens: `{output_tokens}`")
     print(f"Total tokens: `{total_tokens}`")
-    print(f"Estimated cost: `${estimated_cost:.6f}`")
+    print(f"Estimated cost: `${estimated_cost:.6f}")
 
 
 if __name__ == "__main__":
