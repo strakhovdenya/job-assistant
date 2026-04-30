@@ -56,7 +56,7 @@ def raw_job(db: Session) -> RawJob:
     return raw
 
 
-def test_create_from_raw_sets_status_new(db: Session, raw_job: RawJob) -> None:
+def test_create_from_raw_sets_default_status_to_new(db: Session, raw_job: RawJob) -> None:
     job = create_from_raw(db, raw_job)
 
     assert job.status == "new"
@@ -72,7 +72,7 @@ def test_create_from_raw_adds_job_to_db(db: Session, raw_job: RawJob) -> None:
     assert saved_job.description == raw_job.raw_text
 
 
-def test_create_from_raw_does_not_change_raw_job_processing_status(
+def test_create_from_raw_keeps_raw_job_processing_status_unchanged(
     db: Session,
     raw_job: RawJob,
 ) -> None:
