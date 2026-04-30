@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import re
 import subprocess
 import sys
 
@@ -7,7 +8,6 @@ from openai import OpenAI
 
 
 BASE_BRANCH = os.getenv("BASE_BRANCH", "origin/main")
-
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 INPUT_PRICE_PER_1M = 0.40
@@ -17,6 +17,18 @@ MAX_DIFF_CHARS = 12_000
 MAX_FILE_CHARS = 6_000
 MAX_TEST_FILES = 50
 MAX_OUTPUT_TOKENS = 400
+CONTEXT_LINES = int(os.getenv("CONTEXT_LINES", "40"))
+
+PROJECT_PATHS = tuple(
+    path.strip().rstrip("/") + "/"
+    for path in os.getenv(
+        "PROJECT_PATHS",
+        "apps/backend,apps/frontend",
+    ).split(",")
+    if path.strip()
+)
+
+HUNK_RE = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
 def run(cmd: list[str]) -> str:
@@ -27,7 +39,14 @@ def truncate_text(text: str, max_chars: int, label: str) -> str:
     if len(text) <= max_chars:
         return text
 
-    return text[:max_chars] + f"\n\n[{label} TRUNCATED]"
+    head_chars = max_chars // 2
+    tail_chars = max_chars - head_chars
+
+    return (
+        text[:head_chars]
+        + f"\n\n[{label} TRUNCATED: MIDDLE REMOVED]\n\n"
+        + text[-tail_chars:]
+    )
 
 
 def read_file(path: str) -> str:
@@ -39,6 +58,10 @@ def read_file(path: str) -> str:
     return file_path.read_text(encoding="utf-8", errors="ignore")
 
 
+def is_in_target_project(path: str) -> bool:
+    return path.startswith(PROJECT_PATHS)
+
+
 def collect_changed_python_files() -> list[str]:
     changed_files = run(
         ["git", "diff", "--name-only", f"{BASE_BRANCH}...HEAD"]
@@ -47,23 +70,190 @@ def collect_changed_python_files() -> list[str]:
     return [
         file
         for file in changed_files
-        if file.endswith(".py") and not file.startswith("tests/")
+        if (
+            file.endswith(".py")
+            and not file.startswith("tests/")
+            and is_in_target_project(file)
+        )
     ]
 
 
-def collect_existing_test_file_names() -> str:
+def collect_diff_for_files(files: list[str]) -> str:
+    if not files:
+        return ""
+
+    per_file_budget = max(1000, MAX_DIFF_CHARS // len(files))
+    parts = []
+
+    for file in files:
+        file_diff = run(
+            ["git", "diff", f"{BASE_BRANCH}...HEAD", "--", file]
+        )
+
+        if file_diff.strip():
+            file_diff = truncate_text(
+                file_diff,
+                per_file_budget,
+                "FILE DIFF",
+            )
+            parts.append(
+                f"\n===== DIFF FOR: {file} =====\n{file_diff}\n"
+            )
+
+    return truncate_text("\n".join(parts), MAX_DIFF_CHARS, "DIFF")
+
+
+def collect_changed_line_ranges(file: str) -> list[tuple[int, int]]:
+    file_diff = run(
+        [
+            "git",
+            "diff",
+            "--unified=0",
+            f"{BASE_BRANCH}...HEAD",
+            "--",
+            file,
+        ]
+    )
+
+    ranges = []
+
+    for line in file_diff.splitlines():
+        match = HUNK_RE.match(line)
+
+        if not match:
+            continue
+
+        start = int(match.group(1))
+        length = int(match.group(2) or "1")
+
+        if length == 0:
+            continue
+
+        ranges.append((start, start + length - 1))
+
+    return ranges
+
+
+def expand_ranges(
+    ranges: list[tuple[int, int]],
+    context_lines: int,
+    total_lines: int,
+) -> list[tuple[int, int]]:
+    return [
+        (
+            max(1, start - context_lines),
+            min(total_lines, end + context_lines),
+        )
+        for start, end in ranges
+    ]
+
+
+def merge_ranges(
+    ranges: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    if not ranges:
+        return []
+
+    ranges = sorted(ranges)
+    merged = [ranges[0]]
+
+    for start, end in ranges[1:]:
+        last_start, last_end = merged[-1]
+
+        if start <= last_end + 1:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+
+    return merged
+
+
+def read_changed_context(
+    path: str,
+    context_lines: int = CONTEXT_LINES,
+) -> str:
+    content = read_file(path)
+
+    if not content:
+        return ""
+
+    lines = content.splitlines()
+    changed_ranges = collect_changed_line_ranges(path)
+
+    if not changed_ranges:
+        return truncate_text(content, MAX_FILE_CHARS, "FILE")
+
+    expanded_ranges = expand_ranges(
+        changed_ranges,
+        context_lines=context_lines,
+        total_lines=len(lines),
+    )
+
+    merged_ranges = merge_ranges(expanded_ranges)
+
+    parts = []
+
+    for start, end in merged_ranges:
+        snippet = "\n".join(lines[start - 1:end])
+
+        parts.append(
+            f"--- lines {start}-{end} ---\n{snippet}"
+        )
+
+    return truncate_text(
+        "\n\n".join(parts),
+        MAX_FILE_CHARS,
+        "FILE CONTEXT",
+    )
+
+
+def collect_existing_test_file_names(changed_files: list[str]) -> str:
     tests_dir = Path("tests")
 
     if not tests_dir.exists():
         return "No tests directory found."
 
-    test_files = sorted(tests_dir.rglob("test_*.py"))[:MAX_TEST_FILES]
+    all_test_files = sorted(tests_dir.rglob("test_*.py"))
 
-    if not test_files:
+    if not all_test_files:
         return "No test files found."
 
-    return "\n".join(str(path) for path in test_files)
+    keywords = set()
 
+    if any(f.startswith("apps/backend/") for f in changed_files):
+        keywords.update([
+            "backend",
+            "api",
+            "service",
+            "db",
+            "model",
+            "schema",
+            "repository",
+        ])
+
+    if any(f.startswith("apps/frontend/") for f in changed_files):
+        keywords.update([
+            "frontend",
+            "ui",
+            "component",
+            "page",
+            "view",
+            "form",
+            "client",
+        ])
+
+    relevant = [
+        path
+        for path in all_test_files
+        if any(keyword in str(path).lower() for keyword in keywords)
+    ]
+
+    selected = relevant[:MAX_TEST_FILES]
+
+    if not selected:
+        selected = all_test_files[:MAX_TEST_FILES]
+
+    return "\n".join(str(path) for path in selected)
 
 
 def main() -> None:
@@ -75,37 +265,37 @@ def main() -> None:
 
     client = OpenAI(api_key=api_key)
 
-    diff = run(["git", "diff", f"{BASE_BRANCH}...HEAD"])
+    changed_python_files = collect_changed_python_files()
+
+    if not changed_python_files:
+        print("No relevant Python changes found.")
+        return
+
+    diff = collect_diff_for_files(changed_python_files)
 
     if not diff.strip():
         print("No changes found.")
         return
 
-    diff = truncate_text(diff, MAX_DIFF_CHARS, "DIFF")
-
-    changed_python_files = collect_changed_python_files()
-    if not changed_python_files:
-        print("No Python changes found.")
-        return
-
     changed_code_parts = []
 
     for file in changed_python_files:
-        content = read_file(file)
+        content = read_changed_context(file)
 
         if content:
-            content = truncate_text(content, MAX_FILE_CHARS, "FILE")
             changed_code_parts.append(
-                f"\n===== CHANGED FILE: {file} =====\n{content}\n"
+                f"\n===== CHANGED FILE CONTEXT: {file} =====\n{content}\n"
             )
 
     changed_code_text = (
         "\n".join(changed_code_parts)
         if changed_code_parts
-        else "No changed Python files found."
+        else "No changed Python file context found."
     )
 
-    existing_test_files_text = collect_existing_test_file_names()
+    existing_test_files_text = collect_existing_test_file_names(
+        changed_python_files
+    )
 
     prompt = f"""
 Ты senior Python QA engineer.
@@ -121,10 +311,11 @@ def main() -> None:
 - Если кейс уже очевидно покрыт существующим test-файлом по названию, не предлагай его.
 - Не выдумывай несуществующие функции, классы или API.
 - Если тестов достаточно, так и напиши.
+- Учитывай, что контекст файлов содержит только фрагменты вокруг изменённых строк, а не полный файл.
 
 Проанализируй:
-1. Git diff
-2. Короткий контекст изменённых Python-файлов
+1. Git diff только по релевантным файлам
+2. Фрагменты изменённых Python-файлов вокруг изменённых строк
 3. Список уже существующих test-файлов
 
 Верни ответ строго в таком формате:
@@ -152,7 +343,7 @@ Low / Medium / High
 ===== GIT DIFF =====
 {diff}
 
-===== CHANGED PYTHON FILES =====
+===== CHANGED PYTHON FILE CONTEXT =====
 {changed_code_text}
 
 ===== EXISTING TEST FILES =====
@@ -189,4 +380,3 @@ Low / Medium / High
 
 if __name__ == "__main__":
     main()
-
