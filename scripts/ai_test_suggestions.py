@@ -21,10 +21,7 @@ CONTEXT_LINES = int(os.getenv("CONTEXT_LINES", "40"))
 
 PROJECT_PATHS = tuple(
     path.strip().rstrip("/") + "/"
-    for path in os.getenv(
-        "PROJECT_PATHS",
-        "apps/backend,apps/frontend",
-    ).split(",")
+    for path in os.getenv("PROJECT_PATHS", "").split(",")
     if path.strip()
 )
 
@@ -39,14 +36,7 @@ def truncate_text(text: str, max_chars: int, label: str) -> str:
     if len(text) <= max_chars:
         return text
 
-    head_chars = max_chars // 2
-    tail_chars = max_chars - head_chars
-
-    return (
-        text[:head_chars]
-        + f"\n\n[{label} TRUNCATED: MIDDLE REMOVED]\n\n"
-        + text[-tail_chars:]
-    )
+    return text[:max_chars] + f"\n\n[{label} TRUNCATED]"
 
 
 def read_file(path: str) -> str:
@@ -59,6 +49,9 @@ def read_file(path: str) -> str:
 
 
 def is_in_target_project(path: str) -> bool:
+    if not PROJECT_PATHS:
+        return True
+
     return path.startswith(PROJECT_PATHS)
 
 
@@ -207,7 +200,9 @@ def read_changed_context(
     )
 
 
-def collect_existing_test_file_names(changed_files: list[str]) -> str:
+def collect_existing_test_file_names(
+    changed_files: list[str] | None = None,
+) -> str:
     tests_dir = Path("tests")
 
     if not tests_dir.exists():
@@ -217,6 +212,9 @@ def collect_existing_test_file_names(changed_files: list[str]) -> str:
 
     if not all_test_files:
         return "No test files found."
+
+    if not changed_files:
+        return "\n".join(str(path) for path in all_test_files[:MAX_TEST_FILES])
 
     keywords = set()
 
@@ -241,6 +239,9 @@ def collect_existing_test_file_names(changed_files: list[str]) -> str:
             "form",
             "client",
         ])
+
+    if not keywords:
+        return "\n".join(str(path) for path in all_test_files[:MAX_TEST_FILES])
 
     relevant = [
         path
@@ -268,7 +269,7 @@ def main() -> None:
     changed_python_files = collect_changed_python_files()
 
     if not changed_python_files:
-        print("No relevant Python changes found.")
+        print("No Python changes found.")
         return
 
     diff = collect_diff_for_files(changed_python_files)

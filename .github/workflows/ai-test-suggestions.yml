@@ -12,6 +12,9 @@ jobs:
   ai-test-suggestions:
     runs-on: ubuntu-latest
 
+    env:
+      PROJECT_PATHS: apps/backend,apps/frontend
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
