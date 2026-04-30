@@ -334,20 +334,20 @@ Sprint 2 — это фундамент всей системы.
 
 ## 🧱 Epic 2 — Backend (Repository + Service)
 
-- [ ] Создать `job_repository.py`:
-  - [ ] create_from_raw
-  - [ ] get_by_id
-  - [ ] list
-  - [ ] update
+- [x] Создать job_repository.py:
+  - [x] create_from_raw
+  - [x] get_by_id
+  - [x] list
+  - [x] update
 
-- [ ] Создать `job_service.py`:
+- [ ] Создать job_service.py:
   - [ ] create_job_from_raw(raw_job_id)
   - [ ] update_job(job_id, data)
   - [ ] list_jobs()
   - [ ] get_job(job_id)
 
 - [ ] Бизнес-логика:
-  - [ ] при создании Job обновлять `RawJob.processing_status = structured`
+- [ ] при создании Job обновлять RawJob.processing_status = structured
 
 ---
 
