@@ -17,17 +17,21 @@ class JobService:
         if raw_job is None:
             raise ValueError("RawJob not found")
 
-        if raw_job.jobs:
+        existing_jobs = raw_job.jobs or []
+
+        if existing_jobs:
             raise ValueError("Job already exists for this RawJob")
 
-        job = job_repository.create_from_raw(self.db, raw_job)
-
-        # 🔥 ключевая бизнес-логика
-        raw_job.processing_status = "structured"
-        self.db.add(raw_job)
-        self.db.commit()
-
-        return job
+        try:
+            job = job_repository.create_from_raw(self.db, raw_job)
+            raw_job.processing_status = "structured"
+            self.db.add(raw_job)
+            self.db.commit()
+            self.db.refresh(job)
+            return job
+        except Exception:
+            self.db.rollback()
+            raise
 
     def get_job(self, job_id: int) -> Job:
         job = job_repository.get_by_id(self.db, job_id)

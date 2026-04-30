@@ -17,7 +17,7 @@ def create_from_raw(db: Session, raw_job: RawJob) -> Job:
     )
 
     db.add(job)
-    db.commit()
+    db.flush()
     db.refresh(job)
 
     return job
