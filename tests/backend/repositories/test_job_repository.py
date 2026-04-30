@@ -24,23 +24,6 @@ TEST_DATABASE_URL = os.getenv(
 
 
 @pytest.fixture
-def db() -> Generator[Session, None, None]:
-    engine = create_engine(TEST_DATABASE_URL)
-    TestingSessionLocal = sessionmaker(bind=engine)
-
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
-    session = TestingSessionLocal()
-
-    try:
-        yield session
-    finally:
-        session.close()
-        Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture
 def raw_job(db: Session) -> RawJob:
     raw = RawJob(
         raw_text="Python Backend Developer vacancy",
