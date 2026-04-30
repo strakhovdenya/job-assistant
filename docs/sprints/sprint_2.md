@@ -340,14 +340,14 @@ Sprint 2 — это фундамент всей системы.
   - [x] list
   - [x] update
 
-- [ ] Создать job_service.py:
-  - [ ] create_job_from_raw(raw_job_id)
-  - [ ] update_job(job_id, data)
-  - [ ] list_jobs()
-  - [ ] get_job(job_id)
+- [x] Создать job_service.py:
+  - [x] create_job_from_raw(raw_job_id)
+  - [x] update_job(job_id, data)
+  - [x] list_jobs()
+  - [x] get_job(job_id)
 
-- [ ] Бизнес-логика:
-- [ ] при создании Job обновлять RawJob.processing_status = structured
+- [x] Бизнес-логика:
+- [x] при создании Job обновлять RawJob.processing_status = structured
 
 ---
 

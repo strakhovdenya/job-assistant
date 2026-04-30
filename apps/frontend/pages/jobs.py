@@ -45,7 +45,7 @@ if st.button("Load jobs", type="primary"):
                 with col_a:
                     if st.button(f"Open #{item['id']}", key=f"open_{item['id']}"):
                         set_selected_job_id(item["id"])
-                        st.switch_page("pages/3_Job_Detail.py")
+                        st.switch_page("pages/job_detail.py")
                 with col_b:
                     st.caption("Открыть детальный просмотр вакансии")
 
