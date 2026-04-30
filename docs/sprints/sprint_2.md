@@ -353,20 +353,20 @@ Sprint 2 — это фундамент всей системы.
 
 ## 🧱 Epic 3 — API
 
-- [ ] Создать `routes_jobs.py`
+- [x] Создать `routes_jobs.py`
 
-- [ ] Реализовать endpoints:
-  - [ ] POST   /api/v1/jobs/from-raw/{raw_job_id}
-  - [ ] GET    /api/v1/jobs
-  - [ ] GET    /api/v1/jobs/{id}
-  - [ ] PATCH  /api/v1/jobs/{id}
+- [x] Реализовать endpoints:
+  - [x] POST   /api/v1/jobs/from-raw/{raw_job_id}
+  - [x] GET    /api/v1/jobs
+  - [x] GET    /api/v1/jobs/{id}
+  - [x] PATCH  /api/v1/jobs/{id}
 
-- [ ] Валидация:
-  - [ ] проверка существования RawJob
-  - [ ] проверка существования Job
-  - [ ] обработка ошибок
+- [x] Валидация:
+  - [x] проверка существования RawJob
+  - [x] проверка существования Job
+  - [x] обработка ошибок
 
-- [ ] Подключить роутер в main.py
+- [x] Подключить роутер в main.py
 
 ---
 
