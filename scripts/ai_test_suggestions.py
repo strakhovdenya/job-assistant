@@ -171,7 +171,11 @@ def read_changed_context(
         return ""
 
     lines = content.splitlines()
-    changed_ranges = collect_changed_line_ranges(path)
+
+    try:
+        changed_ranges = collect_changed_line_ranges(path)
+    except Exception:
+        return truncate_text(content, MAX_FILE_CHARS, "FILE")
 
     if not changed_ranges:
         return truncate_text(content, MAX_FILE_CHARS, "FILE")
