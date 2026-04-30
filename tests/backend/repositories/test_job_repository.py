@@ -72,7 +72,7 @@ def test_create_from_raw_adds_job_to_db(db: Session, raw_job: RawJob) -> None:
     assert saved_job.description == raw_job.raw_text
 
 
-def test_create_from_raw_does_not_update_raw_job_status(
+def test_create_from_raw_does_not_change_raw_job_processing_status(
     db: Session,
     raw_job: RawJob,
 ) -> None:
