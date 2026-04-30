@@ -1,14 +1,30 @@
 name: Tests
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+  pull_request:
 
 jobs:
-  tests:
+  backend-tests:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: job_assistant
+          POSTGRES_PASSWORD: job_assistant
+          POSTGRES_DB: job_assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U job_assistant -d job_assistant"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg2://job_assistant:job_assistant@localhost:5432/job_assistant
 
     steps:
       - name: Checkout
@@ -20,8 +36,8 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
+      - name: Sync backend dependencies
+        run: uv sync --project apps/backend
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Run backend tests
+        run: uv run --project apps/backend pytest tests/backend
