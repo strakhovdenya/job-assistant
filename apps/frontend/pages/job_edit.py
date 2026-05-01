@@ -10,7 +10,11 @@ if not job_id:
     st.warning("No job selected. Open a job from Jobs List first.")
     st.stop()
 
-job_id = int(job_id)
+try:
+    job_id = int(job_id)
+except (TypeError, ValueError):
+    st.warning("No valid job selected. Open a job from Jobs first.")
+    st.stop()
 
 st.title(f"✏️ Edit Job #{job_id}")
 
@@ -50,3 +54,4 @@ try:
 
 except ApiClientError as exc:
     st.error(str(exc))
+    
