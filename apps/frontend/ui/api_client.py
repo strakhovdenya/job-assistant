@@ -57,3 +57,31 @@ def list_raw_jobs(
 def get_raw_job(raw_job_id: int) -> dict[str, Any]:
     response = requests.get(f"{API_BASE_URL}/jobs/raw/{raw_job_id}", timeout=15)
     return _handle_response(response)
+
+# --- Job API ---
+
+def create_job_from_raw(raw_job_id: int) -> dict[str, Any]:
+    response = requests.post(
+        f"{API_BASE_URL}/jobs/from-raw/{raw_job_id}",
+        timeout=15,
+    )
+    return _handle_response(response)
+
+
+def list_jobs() -> list[dict[str, Any]]:
+    response = requests.get(f"{API_BASE_URL}/jobs", timeout=15)
+    return _handle_response(response)
+
+
+def get_job(job_id: int) -> dict[str, Any]:
+    response = requests.get(f"{API_BASE_URL}/jobs/{job_id}", timeout=15)
+    return _handle_response(response)
+
+
+def update_job(job_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    response = requests.patch(
+        f"{API_BASE_URL}/jobs/{job_id}",
+        json=data,
+        timeout=15,
+    )
+    return _handle_response(response)
