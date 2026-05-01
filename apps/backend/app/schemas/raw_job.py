@@ -13,6 +13,7 @@ class RawJobResponse(BaseModel):
     raw_text: str
     source: str
     content_hash: str
+    processing_status: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
