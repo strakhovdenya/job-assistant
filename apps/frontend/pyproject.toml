@@ -6,3 +6,8 @@ dependencies = [
     "requests>=2.33.1",
     "streamlit>=1.56.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]

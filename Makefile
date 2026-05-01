@@ -18,4 +18,4 @@ test-backend:
 	uv run --project apps/backend --no-sync pytest tests/backend
 
 test-frontend:
-	@echo "Frontend tests are not configured yet"
+	uv run --project apps/frontend --no-sync pytest tests/frontend

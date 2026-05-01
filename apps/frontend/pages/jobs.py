@@ -1,53 +1,39 @@
 import streamlit as st
 
-from ui.api_client import ApiClientError, list_raw_jobs
-from ui.components import render_raw_job_card
-from ui.state import init_state, set_selected_job_id
+from ui.api_client import ApiClientError, list_jobs
 
 st.set_page_config(page_title="Jobs", page_icon="📋", layout="wide")
-init_state()
 
 st.title("📋 Jobs")
 
-col1, col2, col3, col4 = st.columns(4)
+try:
+    jobs = list_jobs()
+except ApiClientError as exc:
+    st.error(str(exc))
+    st.stop()
 
-with col1:
-    limit = st.number_input("Limit", min_value=1, max_value=100, value=20, step=1)
+if not jobs:
+    st.info("No jobs yet.")
+    st.stop()
 
-with col2:
-    offset = st.number_input("Offset", min_value=0, value=0, step=1)
+st.caption(f"Total jobs: {len(jobs)}")
 
-with col3:
-    sort_by = st.selectbox("Sort by", options=["created_at", "id", "source"], index=0)
+for job in jobs:
+    with st.container(border=True):
+        col1, col2 = st.columns([5, 1])
 
-with col4:
-    sort_order = st.selectbox("Sort order", options=["desc", "asc"], index=0)
+        with col1:
+            st.subheader(job.get("title") or f"Job #{job['id']}")
+            st.write(f"**Company:** {job.get('company') or '-'}")
+            st.write(f"**Location:** {job.get('location') or '-'}")
+            st.write(f"**Status:** {job.get('status') or '-'}")
+            st.write(f"**Created at:** {job.get('created_at') or '-'}")
 
-if st.button("Load jobs", type="primary"):
-    try:
-        response = list_raw_jobs(
-            limit=int(limit),
-            offset=int(offset),
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
+            skills = job.get("skills") or []
+            if skills:
+                st.write("**Skills:** " + ", ".join(skills))
 
-        st.success(f"Loaded {len(response['items'])} jobs. Total: {response['total']}")
-
-        items = response["items"]
-        if not items:
-            st.info("No jobs found.")
-        else:
-            for item in items:
-                render_raw_job_card(item)
-
-                col_a, col_b = st.columns([1, 6])
-                with col_a:
-                    if st.button(f"Open #{item['id']}", key=f"open_{item['id']}"):
-                        set_selected_job_id(item["id"])
-                        st.switch_page("pages/job_detail.py")
-                with col_b:
-                    st.caption("Открыть детальный просмотр вакансии")
-
-    except ApiClientError as exc:
-        st.error(str(exc))
+        with col2:
+            if st.button("Open", key=f"open_job_{job['id']}"):
+                st.session_state.selected_structured_job_id = job["id"]
+                st.switch_page("pages/job_edit.py")
