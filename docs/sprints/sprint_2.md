@@ -387,24 +387,24 @@ Sprint 2 — это фундамент всей системы.
 
 ### Raw Jobs Review
 
-- [ ] Создать страницу:
+- [x] Создать страницу:
   - apps/frontend/pages/1_Raw_Jobs.py
 
-- [ ] Реализовать:
-  - [ ] список RawJob
-  - [ ] кнопка "Create Job"
+- [x] Реализовать:
+  - [x] список RawJob
+  - [x] кнопка "Create Job"
 
 ---
 
 ### Job Editor
 
-- [ ] Создать страницу:
-  - apps/frontend/pages/2_Job_Editor.py
+- [x] Создать страницу:
+  - apps/frontend/pages/job_edit.py
 
-- [ ] Реализовать форму:
-  - [ ] title
-  - [ ] company
-  - [ ] location
+- [x] Реализовать форму:
+  - [x] title
+  - [x] company
+  - [x] location
   - [ ] seniority
   - [ ] remote_type
   - [ ] language
@@ -424,24 +424,24 @@ Sprint 2 — это фундамент всей системы.
 
 ### Jobs List
 
-- [ ] Создать страницу:
-  - apps/frontend/pages/3_Jobs.py
+- [x] Создать страницу:
+  - apps/frontend/pages/jobs.py
 
-- [ ] Отобразить:
-  - [ ] title
-  - [ ] company
-  - [ ] status
-  - [ ] created_at
+- [x] Отобразить:
+  - [x] title
+  - [x] company
+  - [x] status
+  - [x] created_at
 
 ---
 
 ### API Client
 
-- [ ] Добавить методы:
-  - [ ] create_job_from_raw
-  - [ ] update_job
-  - [ ] list_jobs
-  - [ ] get_job
+- [x] Добавить методы:
+  - [x] create_job_from_raw
+  - [x] update_job
+  - [x] list_jobs
+  - [x] get_job
 
 ---
 
@@ -457,19 +457,19 @@ Sprint 2 — это фундамент всей системы.
 
 ## 🧱 Epic 7 — End-to-End Flow
 
-- [ ] Проверить полный сценарий:
-  - [ ] создать RawJob
-  - [ ] открыть его
-  - [ ] создать Job
-  - [ ] заполнить поля
-  - [ ] добавить skills
-  - [ ] сохранить
-  - [ ] увидеть в списке
+- [x] Проверить полный сценарий:
+  - [x] создать RawJob
+  - [x] открыть его
+  - [x] создать Job
+  - [x] заполнить поля
+  - [x] добавить skills
+  - [x] сохранить
+  - [x] увидеть в списке
 
-- [ ] Проверить:
-  - [ ] данные сохраняются
-  - [ ] ошибки обрабатываются
-  - [ ] RawJob не изменяется
+- [x] Проверить:
+  - [x] данные сохраняются
+  - [x] ошибки обрабатываются
+  - [x] RawJob не изменяется
 
 ---
 

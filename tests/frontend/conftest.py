@@ -31,9 +31,12 @@ class FakeStreamlit(ModuleType):
         super().__init__("streamlit")
         self.session_state = SessionState()
         self.clicked_buttons = set()
+        self.rendered_buttons = []
+        self.rendered_text_inputs = []
         self.text_inputs = {}
         self.text_areas = {}
         self.number_inputs = {}
+        self.selectbox_values = {}
         self.messages = {
             "success": [],
             "error": [],
@@ -75,10 +78,33 @@ class FakeStreamlit(ModuleType):
         raise StopException()
 
     def button(self, label, key=None, **kwargs):
-        return label in self.clicked_buttons or key in self.clicked_buttons
+        self.rendered_buttons.append({"label": label, "key": key})
+
+        clicked = label in self.clicked_buttons or key in self.clicked_buttons
+
+        if clicked and "on_click" in kwargs:
+            callback = kwargs["on_click"]
+            args = kwargs.get("args", ())
+            callback(*args)
+
+        return clicked
+
+    def form_submit_button(self, label, **kwargs):
+        return label in self.clicked_buttons
 
     def text_input(self, label, value="", **kwargs):
-        return self.text_inputs.get(label, value)
+        key = kwargs.get("key")
+        self.rendered_text_inputs.append({"label": label, "key": key})
+
+        if key and key in self.session_state:
+            return self.session_state[key]
+
+        result = self.text_inputs.get(label, value)
+
+        if key:
+            self.session_state[key] = result
+
+        return result
 
     def text_area(self, label, value="", **kwargs):
         return self.text_areas.get(label, value)
@@ -87,7 +113,7 @@ class FakeStreamlit(ModuleType):
         return self.number_inputs.get(label, value)
 
     def selectbox(self, label, options, index=0, **kwargs):
-        return options[index]
+        return self.selectbox_values.get(label, options[index])
 
     def switch_page(self, page):
         self.switched_page = page
@@ -99,6 +125,9 @@ class FakeStreamlit(ModuleType):
         self.messages["write"].append(value)
 
     def container(self, **kwargs):
+        return self
+
+    def form(self, key, **kwargs):
         return self
 
     def columns(self, spec):
@@ -114,7 +143,6 @@ class FakeStreamlit(ModuleType):
 
 @pytest.fixture
 def fake_streamlit(monkeypatch):
-
     for module_name in ["ui.state", "ui.components"]:
         sys.modules.pop(module_name, None)
 
