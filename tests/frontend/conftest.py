@@ -31,6 +31,8 @@ class FakeStreamlit(ModuleType):
         super().__init__("streamlit")
         self.session_state = SessionState()
         self.clicked_buttons = set()
+        self.rendered_buttons = []
+        self.rendered_text_inputs = []
         self.text_inputs = {}
         self.text_areas = {}
         self.number_inputs = {}
@@ -76,6 +78,8 @@ class FakeStreamlit(ModuleType):
         raise StopException()
 
     def button(self, label, key=None, **kwargs):
+        self.rendered_buttons.append({"label": label, "key": key})
+
         clicked = label in self.clicked_buttons or key in self.clicked_buttons
 
         if clicked and "on_click" in kwargs:
@@ -90,6 +94,7 @@ class FakeStreamlit(ModuleType):
 
     def text_input(self, label, value="", **kwargs):
         key = kwargs.get("key")
+        self.rendered_text_inputs.append({"label": label, "key": key})
 
         if key and key in self.session_state:
             return self.session_state[key]

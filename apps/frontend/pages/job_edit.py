@@ -26,6 +26,9 @@ def get_option_index(options: list[str], value: str | None) -> int:
         return options.index(value)
     return 0
 
+def normalize_skill(skill: str) -> str:
+    return " ".join(skill.strip().split())
+
 
 def init_skills_state(job_id: int, skills: list[str] | None) -> None:
     skills_key = f"job_edit_skills_{job_id}"
@@ -38,14 +41,14 @@ def add_skill(job_id: int) -> None:
     skills_key = f"job_edit_skills_{job_id}"
     input_key = f"job_edit_new_skill_{job_id}"
 
-    skill = st.session_state.get(input_key, "").strip()
+    skill = normalize_skill(st.session_state.get(input_key, ""))
     if not skill:
         return
 
     existing = st.session_state.get(skills_key, [])
-    existing_normalized = {item.lower() for item in existing}
+    existing_normalized = {normalize_skill(item).casefold() for item in existing}
 
-    if skill.lower() not in existing_normalized:
+    if skill.casefold() not in existing_normalized:
         st.session_state[skills_key] = [*existing, skill]
 
     st.session_state[input_key] = ""
@@ -53,8 +56,12 @@ def add_skill(job_id: int) -> None:
 
 def remove_skill(job_id: int, skill: str) -> None:
     skills_key = f"job_edit_skills_{job_id}"
+    target = normalize_skill(skill).casefold()
+
     st.session_state[skills_key] = [
-        item for item in st.session_state.get(skills_key, []) if item != skill
+        item
+        for item in st.session_state.get(skills_key, [])
+        if normalize_skill(item).casefold() != target
     ]
 
 
