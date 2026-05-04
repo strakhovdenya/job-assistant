@@ -154,8 +154,8 @@ saved
 
 ## 🧱 Epic 2 — RawJob Processing Status
 
-- [ ] Добавить новый статус `ai_drafted`
-- [ ] Обновить allowed statuses для `RawJob.processing_status`
+- [x] Добавить новый статус `ai_drafted`
+- [x] Обновить allowed statuses для `RawJob.processing_status`
 - [ ] При создании AI draft выставлять `processing_status = ai_drafted`
 - [ ] При сохранении draft как Job выставлять `processing_status = structured`
 - [ ] Проверить, что RawJob.raw_text не изменяется
@@ -176,15 +176,16 @@ raw → reviewed → ai_drafted → structured
 
 ## 🧱 Epic 3 — Pydantic Schemas
 
-- [ ] Создать `app/schemas/job_draft.py`
-- [ ] Создать `JobDraftResponse`
-- [ ] Создать `JobDraftUpdate`
-- [ ] Создать `JobDraftCreate`
-- [ ] Создать `AIExtractionResult`
-- [ ] Создать `AIExtractionError`
-- [ ] Добавить validation для `skills`
-- [ ] Добавить validation для `confidence`
-- [ ] Добавить validation для enum-like полей
+- [x] Создать `app/schemas/job_draft.py`
+- [x] Создать `JobDraftResponse`
+- [x] Создать `JobDraftUpdate`
+- [x] Создать `JobDraftCreate`
+- [x] Создать `AIExtractionResult`
+- [x] Создать `AIExtractionError`
+- [x] Добавить validation для `skills`
+- [x] Добавить validation для `confidence`
+- [x] Добавить validation для enum-like полей
+- [x] Extra fields игнорируются или безопасно обрабатываются
 
 ### AI output schema
 
@@ -206,10 +207,10 @@ raw → reviewed → ai_drafted → structured
 
 ### DoD
 
-- [ ] AI response валидируется через Pydantic
-- [ ] Missing fields принимаются как `null`
-- [ ] Некорректный AI response не ломает backend
-- [ ] Extra fields игнорируются или безопасно обрабатываются
+- [x] AI response валидируется через Pydantic
+- [x] Missing fields принимаются как `null`
+- [x] Некорректный AI response не ломает backend
+- [x] Extra fields игнорируются или безопасно обрабатываются
 
 ---
 
