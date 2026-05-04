@@ -5,6 +5,7 @@ from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.core.job_statuses import RAW_JOB_STATUS_RAW
 
 if TYPE_CHECKING:
     from app.models.job import Job
@@ -20,7 +21,7 @@ class RawJob(Base):
     processing_status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="raw",
+        default=RAW_JOB_STATUS_RAW,
         server_default="raw",
     )
 

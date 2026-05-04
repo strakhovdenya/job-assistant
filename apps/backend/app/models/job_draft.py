@@ -11,6 +11,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
+from app.core.job_statuses import JOB_DRAFT_STATUS_DRAFT
+
 from app.db.base import Base
 
 def utc_now():
@@ -48,7 +50,7 @@ class JobDraft(Base):
     extraction_status = Column(
         String,
         nullable=False,
-        default="draft",  # draft / failed / reviewed / saved
+        default=JOB_DRAFT_STATUS_DRAFT,  # draft / failed / reviewed / saved
     )
 
     created_at = Column(
