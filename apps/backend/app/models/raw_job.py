@@ -34,3 +34,9 @@ class RawJob(Base):
         back_populates="raw_job",
         cascade="all, delete-orphan",
     )
+
+    job_drafts = relationship(
+        "JobDraft",
+        back_populates="raw_job",
+        cascade="all, delete-orphan",
+    )
