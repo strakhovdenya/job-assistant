@@ -9,6 +9,13 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://job_assistant:job_assistant@postgres:5432/job_assistant"
 
+    ai_enabled: bool = True
+    ai_provider: str = "fake"
+    ai_base_url: str | None = None
+    ai_api_key: str = ""
+    ai_model: str = "fake-model"
+    ai_timeout_seconds: int = 30
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

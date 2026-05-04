@@ -216,16 +216,16 @@ raw → reviewed → ai_drafted → structured
 
 ## 🧱 Epic 4 — AI Client
 
-- [ ] Создать `app/services/ai/ai_client.py`
-- [ ] Добавить интерфейс `AIClient`
-- [ ] Добавить `extract_job(raw_text: str)`
-- [ ] Добавить timeout
-- [ ] Добавить retry 1 раз
-- [ ] Добавить JSON-only parsing
-- [ ] Добавить обработку invalid JSON
-- [ ] Добавить обработку timeout
-- [ ] Добавить обработку provider error
-- [ ] Добавить fake AI client для тестов
+- [x] Создать `app/services/ai/ai_client.py`
+- [x] Добавить интерфейс `AIClient`
+- [x] Добавить `extract_job(raw_text: str)`
+- [x] Добавить timeout
+- [x] Добавить retry 1 раз
+- [x] Добавить JSON-only parsing
+- [x] Добавить обработку invalid JSON
+- [x] Добавить обработку timeout
+- [x] Добавить обработку provider error
+- [x] Добавить fake AI client для тестов
 
 ### Env config
 
@@ -240,10 +240,10 @@ AI_TIMEOUT_SECONDS=30
 
 ### DoD
 
-- [ ] AI client изолирован от бизнес-логики
-- [ ] Тесты могут использовать FakeAIClient
-- [ ] Реальный AI не вызывается в unit tests
-- [ ] Ошибки AI возвращаются контролируемо
+- [x] AI client изолирован от бизнес-логики
+- [x] Тесты могут использовать FakeAIClient
+- [x] Реальный AI не вызывается в unit tests
+- [x] Ошибки AI возвращаются контролируемо
 
 ---
 
