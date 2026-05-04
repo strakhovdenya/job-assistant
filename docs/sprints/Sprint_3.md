@@ -113,25 +113,25 @@ pipeline = [
 
 ## 🧱 Epic 1 — Domain Model: JobDraft
 
-- [ ] Создать backend model `JobDraft`
-- [ ] Добавить связь `JobDraft.raw_job_id → RawJob.id`
-- [ ] Добавить поле `title`
-- [ ] Добавить поле `company`
-- [ ] Добавить поле `location`
-- [ ] Добавить поле `language`
-- [ ] Добавить поле `seniority`
-- [ ] Добавить поле `remote_type`
-- [ ] Добавить поле `employment_type`
-- [ ] Добавить поле `skills`
-- [ ] Добавить поле `description`
-- [ ] Добавить поле `ai_model`
-- [ ] Добавить поле `ai_confidence`
-- [ ] Добавить поле `ai_warnings`
-- [ ] Добавить поле `extraction_status`
-- [ ] Добавить `created_at`
-- [ ] Добавить `updated_at`
-- [ ] Создать Alembic migration
-- [ ] Проверить migration upgrade
+- [x] Создать backend model `JobDraft`
+- [x] Добавить связь `JobDraft.raw_job_id → RawJob.id`
+- [x] Добавить поле `title`
+- [x] Добавить поле `company`
+- [x] Добавить поле `location`
+- [x] Добавить поле `language`
+- [x] Добавить поле `seniority`
+- [x] Добавить поле `remote_type`
+- [x] Добавить поле `employment_type`
+- [x] Добавить поле `skills`
+- [x] Добавить поле `description`
+- [x] Добавить поле `ai_model`
+- [x] Добавить поле `ai_confidence`
+- [x] Добавить поле `ai_warnings`
+- [x] Добавить поле `extraction_status`
+- [x] Добавить `created_at`
+- [x] Добавить `updated_at`
+- [x] Создать Alembic migration
+- [x] Проверить migration upgrade
 - [ ] Проверить migration downgrade
 
 ### `extraction_status`
@@ -145,8 +145,8 @@ saved
 
 ### DoD
 
-- [ ] Таблица `job_drafts` создаётся
-- [ ] JobDraft связан с RawJob
+- [x] Таблица `job_drafts` создаётся
+- [x] JobDraft связан с RawJob
 - [ ] Draft можно сохранить в БД
 - [ ] Draft можно прочитать из БД
 
