@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ai_enabled: bool = True
     ai_provider: str = "fake"
     ai_base_url: str | None = None
-    ai_api_key: str = ""
+    ai_api_key: str | None = None
     ai_model: str = "fake-model"
     ai_timeout_seconds: int = 30
 

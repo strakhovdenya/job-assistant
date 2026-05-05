@@ -24,7 +24,7 @@ def test_ai_client_factory_returns_fake_client_when_ai_disabled(monkeypatch):
 
 def test_ai_client_factory_returns_openai_compatible_client(monkeypatch):
     monkeypatch.setenv("AI_ENABLED", "true")
-    monkeypatch.setenv("AI_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.setenv("AI_API_KEY", "test-key")
     monkeypatch.setenv("AI_MODEL", "test-model")
     monkeypatch.setenv("AI_TIMEOUT_SECONDS", "10")
