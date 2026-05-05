@@ -1,6 +1,6 @@
 import pytest
+import logging
 
-from app.schemas.job_draft import AIExtractionResult
 from app.services.ai.pipeline import (
     CleanTextStep,
     DetectLanguageStep,
@@ -12,8 +12,23 @@ from app.services.ai.pipeline import (
     build_job_extraction_pipeline,
     NormalizeFieldsStep,
 )
-from app.services.ai.ai_client import AIClientProviderError, FakeAIClient
 
+from app.services.ai.ai_client import AIClientProviderError, AIClientError, FakeAIClient
+from app.schemas.job_draft import AIExtractionResult
+
+
+def make_ai_result() -> AIExtractionResult:
+    return AIExtractionResult(
+        title="Backend Developer",
+        company="Example Company",
+        location="Berlin",
+        language="en",
+        seniority="middle",
+        remote_type="remote",
+        employment_type="full_time",
+        skills=["python"],
+        description="Backend role",
+    )
 
 class DummyAIClient:
     def __init__(self) -> None:
@@ -207,6 +222,123 @@ def test_pipeline_raises_when_step_returns_invalid_type():
     with pytest.raises(PipelineValidationError):
         pipeline.run(context)
 
+def test_extract_structured_data_step_success_first_attempt() -> None:
+    class SuccessfulAIClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract_job(self, text: str) -> AIExtractionResult:
+            self.calls += 1
+            return make_ai_result()
+
+    ai_client = SuccessfulAIClient()
+    step = ExtractStructuredDataStep(ai_client, max_retries=2)
+
+    context = PipelineContext(raw_text="raw", cleaned_text="cleaned")
+
+    result = step.run(context)
+
+    assert ai_client.calls == 1
+    assert result.extraction_result is not None
+    assert result.extraction_result.title == "Backend Developer"
+    assert result.errors == []
+
+def test_extract_structured_data_step_success_after_retry(caplog: pytest.LogCaptureFixture) -> None:
+    class FlakyAIClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract_job(self, text: str) -> AIExtractionResult:
+            self.calls += 1
+
+            if self.calls == 1:
+                raise AIClientError("temporary AI failure")
+
+            return make_ai_result()
+
+    ai_client = FlakyAIClient()
+    step = ExtractStructuredDataStep(ai_client, max_retries=2)
+
+    context = PipelineContext(raw_text="raw", cleaned_text="cleaned")
+
+    with caplog.at_level(logging.WARNING):
+        result = step.run(context)
+
+    assert ai_client.calls == 2
+    assert result.extraction_result is not None
+    assert result.errors == []
+    assert "AI extraction failed, retrying" in caplog.text
+
+def test_extract_structured_data_step_fails_after_retries(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class FailingAIClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract_job(self, text: str) -> AIExtractionResult:
+            self.calls += 1
+            raise AIClientError("permanent AI failure")
+
+    ai_client = FailingAIClient()
+    step = ExtractStructuredDataStep(ai_client, max_retries=2)
+
+    context = PipelineContext(raw_text="raw", cleaned_text="cleaned")
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(AIClientError):
+            step.run(context)
+
+    assert ai_client.calls == 3
+    assert context.extraction_result is None
+    assert context.errors == ["permanent AI failure"]
+    assert "AI extraction failed after retries" in caplog.text
+
+def test_extract_structured_data_step_does_not_retry_unexpected_errors() -> None:
+    class BrokenAIClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract_job(self, text: str) -> AIExtractionResult:
+            self.calls += 1
+            raise ValueError("unexpected failure")
+
+    ai_client = BrokenAIClient()
+    step = ExtractStructuredDataStep(ai_client, max_retries=2)
+
+    context = PipelineContext(raw_text="raw", cleaned_text="cleaned")
+
+    with pytest.raises(ValueError):
+        step.run(context)
+
+    assert ai_client.calls == 1
+    assert context.errors == []
+
+def test_extract_structured_data_step_fails_after_retries(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class FailingAIClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract_job(self, text: str) -> AIExtractionResult:
+            self.calls += 1
+            raise AIClientError("permanent AI failure")
+
+    ai_client = FailingAIClient()
+    step = ExtractStructuredDataStep(ai_client, max_retries=2)
+
+    context = PipelineContext(raw_text="raw", cleaned_text="cleaned")
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(AIClientError):
+            step.run(context)
+
+    assert ai_client.calls == 3
+    assert context.extraction_result is None
+    assert context.errors == ["permanent AI failure"]
+    assert "AI extraction failed after retries" in caplog.text
+
 def test_detect_language_step_detects_russian() -> None:
     context = PipelineContext(
         raw_text="",
@@ -356,4 +488,5 @@ def test_detect_language_step_detects_russian_with_english_skills() -> None:
     result = DetectLanguageStep().run(context)
 
     assert result.detected_language == "ru"
+    
 

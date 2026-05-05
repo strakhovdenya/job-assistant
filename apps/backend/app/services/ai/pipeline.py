@@ -1,4 +1,6 @@
+import logging
 import re
+
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -7,6 +9,7 @@ from typing import Optional
 from app.schemas.job_draft import AIExtractionResult
 from app.services.ai.ai_client import AIClient, AIClientError
 
+logger = logging.getLogger(__name__)
 
 class PipelineError(Exception):
     pass
@@ -73,17 +76,43 @@ class CleanTextStep(PipelineStep):
 
 
 class ExtractStructuredDataStep(PipelineStep):
-    def __init__(self, ai_client: AIClient) -> None:
+    def __init__(self, ai_client: AIClient, max_retries: int = 2) -> None:
         self.ai_client = ai_client
+        self.max_retries = max_retries
 
     def run(self, context: PipelineContext) -> PipelineContext:
         text = context.cleaned_text or context.raw_text
+        attempts = self.max_retries + 1
 
-        try:
-            context.extraction_result = self.ai_client.extract_job(text)
-        except AIClientError as exc:
-            context.errors.append(str(exc))
-            raise
+        for attempt in range(1, attempts + 1):
+            try:
+                context.extraction_result = self.ai_client.extract_job(text)
+                return context
+            except AIClientError as exc:
+                if attempt < attempts:
+                    logger.warning(
+                        "AI extraction failed, retrying",
+                        extra={
+                            "attempt": attempt,
+                            "max_attempts": attempts,
+                            "error": str(exc),
+                        },
+                    )
+                    continue
+
+                message = str(exc)
+                context.errors.append(message)
+
+                logger.error(
+                    "AI extraction failed after retries",
+                    extra={
+                        "attempt": attempt,
+                        "max_attempts": attempts,
+                        "error": message,
+                    },
+                )
+
+                raise
 
         return context
 
