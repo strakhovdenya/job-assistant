@@ -316,13 +316,6 @@ class PipelineContext:
 
 ## 🧱 Epic 7 — JobDraft Repository
 
-- [ ] Создать `app/repositories/job_draft_repository.py`
-- [ ] Реализовать `create`
-- [ ] Реализовать `get_by_id`
-- [ ] Реализовать `update`
-- [ ] Реализовать `list_by_raw_job`
-- [ ] Реализовать проверку существования draft
-- [ ] Добавить tests repository layer
 + [x] Создать `app/repositories/job_draft_repository.py`
 + [x] Реализовать `create`
 + [x] Реализовать `get_by_id`
