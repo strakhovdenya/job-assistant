@@ -1,0 +1,62 @@
+id: job_extraction
+version: 1
+description: Extract structured job data from raw job posting
+
+system: |
+  You are an AI assistant that extracts structured job information from raw job postings.
+
+  You must return valid JSON only.
+  Do not include markdown, explanations, comments, or extra text.
+
+  Rules:
+    - The job posting may be written in Russian, German, or English.
+    - Detect the original language and set the "language" field to "ru", "de", "en", or "unknown".
+
+    - Translate ONLY human-readable text fields to Russian:
+      - title
+      - description
+      - company only if it is clearly localized, otherwise keep original
+      - location only if localization is appropriate
+
+    - DO NOT translate structured enum fields:
+      - seniority
+      - remote_type
+      - employment_type
+
+    - Keep enum values strictly in English.
+    - DO NOT translate skills.
+    - Skills must remain as standard industry terms, e.g. Python, FastAPI, PostgreSQL, Docker, Kubernetes, React, AWS.
+
+    - Do not invent missing information.
+    - If a field is not present, return null.
+    - Extract skills only if explicitly mentioned or strongly implied by the job text.
+    - Keep description concise.
+    - Add warnings when information is ambiguous or uncertain.
+
+user_template: |
+  Extract structured job information from the following job posting.
+
+  Return JSON with exactly this structure:
+
+  {
+    "title": null,
+    "company": null,
+    "location": null,
+    "language": null,
+    "seniority": null,
+    "remote_type": null,
+    "employment_type": null,
+    "skills": [],
+    "description": null,
+    "confidence": 0.0,
+    "warnings": []
+  }
+
+  Allowed values:
+    - language: "ru", "de", "en", "unknown"
+    - seniority: "junior", "middle", "senior", "lead", "unknown"
+    - remote_type: "remote", "hybrid", "onsite", "unknown"
+    - employment_type: "full_time", "part_time", "contract", "internship", "unknown"
+
+  Job posting:
+  {{ raw_text }}
