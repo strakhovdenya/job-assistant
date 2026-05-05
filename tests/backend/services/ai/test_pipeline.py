@@ -3,12 +3,17 @@ import logging
 
 from app.services.ai.pipeline import (
     CleanTextStep,
+    DetectLanguageStep,
     ExtractStructuredDataStep,
     JobExtractionPipeline,
     PipelineContext,
-    ValidateResultStep, PipelineValidationError,
+    PipelineValidationError,
+    ValidateResultStep,
+    build_job_extraction_pipeline,
+    NormalizeFieldsStep,
 )
-from app.services.ai.ai_client import AIClientProviderError, AIClientError
+
+from app.services.ai.ai_client import AIClientProviderError, AIClientError, FakeAIClient
 from app.schemas.job_draft import AIExtractionResult
 
 
@@ -334,5 +339,154 @@ def test_extract_structured_data_step_fails_after_retries(
     assert context.errors == ["permanent AI failure"]
     assert "AI extraction failed after retries" in caplog.text
 
+def test_detect_language_step_detects_russian() -> None:
+    context = PipelineContext(
+        raw_text="",
+        cleaned_text="Ищем Python разработчика в команду",
+    )
 
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "ru"
+
+
+def test_detect_language_step_detects_german_with_umlaut() -> None:
+    context = PipelineContext(
+        raw_text="",
+        cleaned_text="Wir suchen einen Entwickler für München",
+    )
+
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "de"
+
+
+def test_detect_language_step_detects_english_as_fallback() -> None:
+    context = PipelineContext(
+        raw_text="",
+        cleaned_text="We are looking for a Python developer",
+    )
+
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "en"
+
+
+def test_detect_language_step_returns_unknown_for_empty_text() -> None:
+    context = PipelineContext(
+        raw_text="",
+        cleaned_text="   ",
+    )
+
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "unknown"
+
+
+def test_detect_language_step_uses_empty_string_when_cleaned_text_is_none() -> None:
+    context = PipelineContext(
+        raw_text="Some raw text",
+        cleaned_text=None,
+    )
+
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "unknown"
+
+def test_build_job_extraction_pipeline_includes_detect_language_step() -> None:
+    ai_client = FakeAIClient()
+    pipeline = build_job_extraction_pipeline(ai_client)
+
+    step_types = [type(step) for step in pipeline.steps]
+
+    assert step_types == [
+        CleanTextStep,
+        DetectLanguageStep,
+        ExtractStructuredDataStep,
+        NormalizeFieldsStep,
+        ValidateResultStep,
+    ]
+
+def test_pipeline_detects_language_but_keeps_ai_language_result() -> None:
+    ai_client = FakeAIClient()
+    pipeline = build_job_extraction_pipeline(ai_client)
+
+    context = PipelineContext(
+        raw_text="Ищем Python разработчика",
+    )
+
+    result = pipeline.run(context)
+
+    assert result.detected_language == "ru"
+    assert result.extraction_result is not None
+    assert result.extraction_result.language == "en"
+
+def test_normalize_fields_step_normalizes_strings() -> None:
+    context = PipelineContext(
+        raw_text="raw",
+        extraction_result=AIExtractionResult(
+            title="  Python Developer  ",
+            company="  ACME  ",
+            location="  Berlin  ",
+            description="  Great job  ",
+            employment_type="full_time",
+            work_mode="remote",
+            seniority="middle",
+            language="en",
+            skills=[],
+        ),
+    )
+
+    result = NormalizeFieldsStep().run(context)
+
+    assert result.extraction_result is not None
+    assert result.extraction_result.title == "Python Developer"
+    assert result.extraction_result.company == "ACME"
+    assert result.extraction_result.location == "Berlin"
+    assert result.extraction_result.description == "Great job"
+
+def test_normalize_fields_step_normalizes_skills_to_lowercase_and_deduplicates() -> None:
+    context = PipelineContext(
+        raw_text="raw",
+        extraction_result=AIExtractionResult(
+            title="Developer",
+            company=None,
+            location=None,
+            description=None,
+            employment_type="full_time",
+            remote_type="remote",
+            seniority="middle",
+            language="en",
+            skills=[" Python ", "python", "Django", "", "django"],
+        ),
+    )
+
+    result = NormalizeFieldsStep().run(context)
+
+    assert result.extraction_result is not None
+    assert result.extraction_result.skills == ["python", "django"]
+
+
+def test_normalize_fields_step_does_nothing_without_extraction_result() -> None:
+    context = PipelineContext(raw_text="raw")
+
+    result = NormalizeFieldsStep().run(context)
+
+    assert result.extraction_result is None
+
+def test_normalize_enum_replaces_unexpected_separators() -> None:
+    assert NormalizeFieldsStep._normalize_enum(" Full-Time ") == "full_time"
+    assert NormalizeFieldsStep._normalize_enum("mid / senior") == "mid_senior"
+    assert NormalizeFieldsStep._normalize_enum("  ") is None
+
+def test_detect_language_step_detects_russian_with_english_skills() -> None:
+    context = PipelineContext(
+        raw_text="",
+        cleaned_text="Ищем Python developer в команду",
+    )
+
+    result = DetectLanguageStep().run(context)
+
+    assert result.detected_language == "ru"
+    
 
