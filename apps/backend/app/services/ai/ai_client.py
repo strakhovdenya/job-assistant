@@ -1,6 +1,6 @@
-import json
 from abc import ABC, abstractmethod
-from typing import Any
+from openai import APIConnectionError, APITimeoutError, OpenAI, OpenAIError
+import instructor
 
 from pydantic import ValidationError
 
@@ -61,31 +61,30 @@ class OpenAICompatibleAIClient(AIClient):
         self.base_url = base_url
         self.timeout_seconds = timeout_seconds
 
+        openai_client = OpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout_seconds,
+        )
+
+        self.client = instructor.from_openai(openai_client)
+
     def extract_job(self, raw_text: str) -> AIExtractionResult:
         try:
             messages = build_job_extraction_messages(raw_text)
-            response_text = self._call_provider(messages)
-            return self._parse_response(response_text)
-        except AIClientError:
-            raise
-        except TimeoutError as exc:
+
+            return self.client.chat.completions.create(
+                model=self.model,
+                response_model=AIExtractionResult,
+                messages=messages,
+                temperature=0,
+            )
+
+        except APITimeoutError as exc:
             raise AIClientTimeoutError("AI provider request timed out") from exc
-
-    def _call_provider(self, messages: list[dict[str, str]]) -> str:
-        """
-        Real provider call will be implemented later.
-
-        The prompt is already built before this method.
-        """
-        raise AIClientProviderError("OpenAI-compatible client is not implemented yet")
-
-    def _parse_response(self, response_text: str) -> AIExtractionResult:
-        try:
-            data: dict[str, Any] = json.loads(response_text)
-        except json.JSONDecodeError as exc:
-            raise AIClientInvalidResponseError("AI provider returned invalid JSON") from exc
-
-        try:
-            return AIExtractionResult.model_validate(data)
+        except APIConnectionError as exc:
+            raise AIClientProviderError("AI provider connection failed") from exc
+        except OpenAIError as exc:
+            raise AIClientProviderError("AI provider request failed") from exc
         except ValidationError as exc:
             raise AIClientInvalidResponseError("AI provider returned invalid schema") from exc
