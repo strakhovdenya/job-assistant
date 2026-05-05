@@ -76,3 +76,69 @@ def test_openai_compatible_client_rejects_invalid_schema_response():
 
     with pytest.raises(AIClientInvalidResponseError):
         client.extract_job("raw text")
+
+def test_openai_compatible_client_extract_job_calls_prompt_loader(monkeypatch):
+    from app.services.ai import ai_client as ai_client_module
+    from app.services.ai.ai_client import OpenAICompatibleAIClient
+
+    called = {}
+
+    def fake_build_job_extraction_messages(raw_text: str):
+        called["raw_text"] = raw_text
+        return [{"role": "user", "content": "test prompt"}]
+
+    class TestClient(OpenAICompatibleAIClient):
+        def _call_provider(self, messages):
+            return """
+            {
+              "title": "Backend Developer",
+              "company": "Example Company",
+              "location": null,
+              "language": "en",
+              "seniority": "middle",
+              "remote_type": "remote",
+              "employment_type": "full_time",
+              "skills": ["python"],
+              "description": "Test description",
+              "confidence": 0.8,
+              "warnings": []
+            }
+            """
+
+    monkeypatch.setattr(
+        ai_client_module,
+        "build_job_extraction_messages",
+        fake_build_job_extraction_messages,
+    )
+
+    client = TestClient(api_key="test", model="test-model")
+
+    result = client.extract_job("raw job text")
+
+    assert called["raw_text"] == "raw job text"
+    assert result.title == "Backend Developer"
+
+def test_openai_compatible_client_extract_job_wraps_timeout():
+    from app.services.ai.ai_client import AIClientTimeoutError, OpenAICompatibleAIClient
+
+    class TimeoutClient(OpenAICompatibleAIClient):
+        def _call_provider(self, messages):
+            raise TimeoutError
+
+    client = TimeoutClient(api_key="test", model="test-model")
+
+    with pytest.raises(AIClientTimeoutError):
+        client.extract_job("raw job text")
+
+def test_openai_compatible_client_extract_job_keeps_provider_error():
+    from app.services.ai.ai_client import AIClientProviderError, OpenAICompatibleAIClient
+
+    class ProviderErrorClient(OpenAICompatibleAIClient):
+        def _call_provider(self, messages):
+            raise AIClientProviderError("provider failed")
+
+    client = ProviderErrorClient(api_key="test", model="test-model")
+
+    with pytest.raises(AIClientProviderError):
+        client.extract_job("raw job text")
+

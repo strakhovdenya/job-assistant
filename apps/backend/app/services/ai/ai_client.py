@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.schemas.job_draft import AIExtractionResult
+from app.services.ai.prompts.prompt_loader import build_job_extraction_messages
 
 
 class AIClientError(Exception):
@@ -62,19 +63,19 @@ class OpenAICompatibleAIClient(AIClient):
 
     def extract_job(self, raw_text: str) -> AIExtractionResult:
         try:
-            response_text = self._call_provider(raw_text)
+            messages = build_job_extraction_messages(raw_text)
+            response_text = self._call_provider(messages)
             return self._parse_response(response_text)
         except AIClientError:
             raise
         except TimeoutError as exc:
             raise AIClientTimeoutError("AI provider request timed out") from exc
 
-    def _call_provider(self, raw_text: str) -> str:
+    def _call_provider(self, messages: list[dict[str, str]]) -> str:
         """
-        Real provider call will be implemented after prompt design.
+        Real provider call will be implemented later.
 
-        For now this class defines the production-facing contract,
-        while tests and pipeline can use FakeAIClient.
+        The prompt is already built before this method.
         """
         raise AIClientProviderError("OpenAI-compatible client is not implemented yet")
 

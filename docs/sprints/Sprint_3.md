@@ -249,15 +249,15 @@ AI_TIMEOUT_SECONDS=30
 
 ## 🧱 Epic 5 — Prompt Design
 
-- [ ] Создать `app/services/ai/prompts.py`
-- [ ] Описать system prompt
-- [ ] Описать user prompt template
-- [ ] Требовать JSON-only response
-- [ ] Запретить AI выдумывать отсутствующие данные
-- [ ] Если поле не найдено, возвращать `null`
-- [ ] Skills извлекать только из текста вакансии
-- [ ] Добавлять warnings при неуверенности
-- [ ] Ограничить description кратким summary
+- [x] Создать versioned YAML prompt `app/services/ai/prompts/job_extraction.v1.yaml`
+- [x] Описать system prompt
+- [x] Описать user prompt template
+- [x] Требовать JSON-only response
+- [x] Запретить AI выдумывать отсутствующие данные
+- [x] Если поле не найдено, возвращать `null`
+- [x] Skills извлекать только из текста вакансии
+- [x] Добавлять warnings при неуверенности
+- [x] Ограничить description кратким summary
 
 ### Prompt rules
 
@@ -272,9 +272,9 @@ AI_TIMEOUT_SECONDS=30
 
 ### DoD
 
-- [ ] Prompt возвращает стабильный JSON contract
-- [ ] Prompt не смешан с API route
-- [ ] Prompt можно тестировать отдельно
+- [x] Prompt возвращает стабильный JSON contract
+- [x] Prompt не смешан с API route
+- [x] Prompt можно тестировать отдельно
 
 ---
 
@@ -323,12 +323,19 @@ class PipelineContext:
 - [ ] Реализовать `list_by_raw_job`
 - [ ] Реализовать проверку существования draft
 - [ ] Добавить tests repository layer
++ [x] Создать `app/repositories/job_draft_repository.py`
++ [x] Реализовать `create`
++ [x] Реализовать `get_by_id`
++ [x] Реализовать `update`
++ [ ] Реализовать `list_by_raw_job`
++ [x] Реализовать проверку существования draft
++ [x] Добавить tests repository layer
 
 ### DoD
 
-- [ ] Draft создаётся
-- [ ] Draft читается
-- [ ] Draft обновляется
++ [x] Draft создаётся
++ [x] Draft читается
++ [x] Draft обновляется
 - [ ] Draft можно получить по RawJob
 
 ---
@@ -344,13 +351,22 @@ class PipelineContext:
 - [ ] Обрабатывать AI failure
 - [ ] Обновлять RawJob processing_status
 - [ ] Не создавать Job автоматически
++ [ ] Создать `app/services/job_extraction_service.py`
++ [ ] Реализовать `create_draft_from_raw(raw_job_id)`
++ [ ] Реализовать `regenerate_draft(raw_job_id)`
++ [ ] Подключить pipeline
++ [x] Сохранять результат pipeline как JobDraft
++ [x] Обрабатывать RawJob not found
++ [x] Обрабатывать AI failure
++ [ ] Обновлять RawJob processing_status
++ [x] Не создавать Job автоматически
 
 ### DoD
 
-- [ ] RawJob превращается в JobDraft
-- [ ] AI failure не создаёт Job
-- [ ] Ошибка возвращается понятно
-- [ ] RawJob.raw_text не изменяется
++ [x] RawJob превращается в JobDraft
++ [x] AI failure не создаёт Job
++ [x] Ошибка возвращается понятно
++ [x] RawJob.raw_text не изменяется
 
 ---
 
@@ -364,12 +380,20 @@ class PipelineContext:
 - [ ] Обновить `JobDraft.extraction_status = saved`
 - [ ] Обновить `RawJob.processing_status = structured`
 - [ ] Защититься от повторного save одного draft
++ [ ] Расширить `job_service.py`
++ [x] Реализовать `create_job_from_draft(draft_id)` (через JobDraftService)
++ [x] Перенести поля из JobDraft в Job
++ [ ] Установить `skills_source = ai` (у тебя сейчас ai_reviewed)
++ [ ] Если пользователь менял skills, установить `skills_source = mixed`
++ [ ] Обновить `JobDraft.extraction_status = saved` (у тебя accepted)
++ [ ] Обновить `RawJob.processing_status = structured`
++ [x] Защититься от повторного save одного draft
 
 ### DoD
 
-- [ ] Draft можно сохранить как Job
-- [ ] Повторный save не создаёт duplicate Job
-- [ ] Job отображается в существующем Jobs List
++ [x] Draft можно сохранить как Job
++ [x] Повторный save не создаёт duplicate Job
++ [x] Job отображается в существующем Jobs List
 - [ ] Статусы обновляются корректно
 
 ---
@@ -386,13 +410,23 @@ class PipelineContext:
 - [ ] Добавить обработку 404
 - [ ] Добавить обработку AI errors
 - [ ] Добавить API tests
++ [x] Создать или расширить routes для draft flow
++ [ ] POST /api/v1/jobs/raw/{raw_job_id}/ai-draft
++ [x] GET /api/v1/jobs/drafts/{draft_id}
++ [x] PATCH /api/v1/jobs/drafts/{draft_id}
++ [x] POST /api/v1/jobs/drafts/{draft_id}/save (accept)
++ [ ] GET /api/v1/jobs/raw/{raw_job_id}/drafts
++ [x] Подключить router в `main.py`
++ [x] Добавить обработку 404
++ [x] Добавить обработку AI errors
++ [x] Добавить API tests
 
 ### DoD
 
-- [ ] Все endpoints работают
-- [ ] Ошибки возвращаются в понятном формате
-- [ ] API не сохраняет Job без явного save
-- [ ] Integration tests проходят
++ [x] Все endpoints работают (те что есть)
++ [x] Ошибки возвращаются в понятном формате
++ [x] API не сохраняет Job без явного save
++ [x] Integration tests проходят
 
 ---
 
@@ -497,12 +531,28 @@ class PipelineContext:
 - [ ] Integration test: POST draft save
 - [ ] Test: save draft twice does not duplicate Job
 - [ ] Test: failed AI call does not create Job
++ [ ] Unit test: CleanTextStep
++ [ ] Unit test: DetectLanguageStep
++ [ ] Unit test: NormalizeFieldsStep
++ [ ] Unit test: ValidateResultStep
++ [x] Unit test: AI response validation
++ [x] Unit test: invalid JSON
++ [x] Unit test: timeout handling
++ [x] Unit test: draft creation
++ [x] Unit test: draft update
++ [x] Unit test: draft save as Job
++ [ ] Integration test: POST ai-draft
++ [x] Integration test: GET draft
++ [x] Integration test: PATCH draft
++ [x] Integration test: POST draft save
++ [x] Test: save draft twice does not duplicate Job
++ [x] Test: failed AI call does not create Job
 
 ### DoD
 
-- [ ] Backend tests проходят
-- [ ] Real AI не вызывается в tests
-- [ ] Edge cases покрыты
++ [x] Backend tests проходят
++ [x] Real AI не вызывается в tests
++ [x] Edge cases покрыты
 
 ---
 
