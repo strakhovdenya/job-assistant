@@ -280,16 +280,16 @@ AI_TIMEOUT_SECONDS=30
 
 ## 🧱 Epic 6 — Extraction Pipeline
 
-- [ ] Создать `app/services/ai/pipeline.py`
-- [ ] Создать `PipelineContext`
-- [ ] Создать base class/interface для step
-- [ ] Реализовать `CleanTextStep`
+- [x] Создать `app/services/ai/pipeline.py`
+- [x] Создать `PipelineContext`
+- [x] Создать base class/interface для step
+- [x] Реализовать `CleanTextStep`
 - [ ] Реализовать `DetectLanguageStep`
-- [ ] Реализовать `ExtractStructuredDataStep`
+- [x] Реализовать `ExtractStructuredDataStep`
 - [ ] Реализовать `NormalizeFieldsStep`
-- [ ] Реализовать `ValidateResultStep`
-- [ ] Реализовать `JobExtractionPipeline`
-- [ ] Добавить warnings/errors в context
+- [x] Реализовать `ValidateResultStep`
+- [x] Реализовать `JobExtractionPipeline`
+- [x] Добавить warnings/errors в context
 - [ ] Добавить unit tests для каждого step
 
 ### PipelineContext
@@ -307,10 +307,10 @@ class PipelineContext:
 
 ### DoD
 
-- [ ] Pipeline запускается по RawJob
+- [x] Pipeline запускается по RawJob
 - [ ] Каждый step тестируется отдельно
-- [ ] AI вызов находится только в `ExtractStructuredDataStep`
-- [ ] Pipeline можно расширить без переписывания service
+- [x] AI вызов находится только в `ExtractStructuredDataStep`
+- [x] Pipeline можно расширить без переписывания service
 
 ---
 

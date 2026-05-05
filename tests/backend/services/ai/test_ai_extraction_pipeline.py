@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models.raw_job import RawJob
-from app.repositories.job_draft_repository import JobDraftRepository
+from app.services.ai.pipeline import PipelineValidationError
 from app.services.ai.ai_client import AIClientError
 from app.services.ai.ai_extraction_pipeline import AIExtractionPipeline
 
@@ -95,3 +95,33 @@ def test_pipeline_ai_error_creates_failed_draft(db: Session):
     assert draft.raw_job_id == raw_job.id
     assert draft.extraction_status == "failed"
     assert len(draft.ai_warnings) > 0
+
+def test_pipeline_handles_pipeline_validation_error_in_ai_extraction_pipeline(
+    monkeypatch,
+    db: Session,
+):
+    raw_job = create_raw_job(db)
+
+    class BrokenPipeline:
+        def run(self, context):
+            raise PipelineValidationError("pipeline validation failed")
+
+    def fake_build_job_extraction_pipeline(ai_client):
+        return BrokenPipeline()
+
+    monkeypatch.setattr(
+        "app.services.ai.ai_extraction_pipeline.build_job_extraction_pipeline",
+        fake_build_job_extraction_pipeline,
+    )
+
+    pipeline = AIExtractionPipeline(
+        db=db,
+        ai_client=DummyAIClient(),
+    )
+
+    draft = pipeline.run(raw_job.id)
+
+    assert draft.raw_job_id == raw_job.id
+    assert draft.extraction_status == "failed"
+    assert draft.ai_warnings == ["pipeline validation failed"]
+

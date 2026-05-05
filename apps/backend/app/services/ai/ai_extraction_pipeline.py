@@ -11,6 +11,11 @@ from app.repositories.raw_job_repository import RawJobRepository
 from app.schemas.job_draft import JobDraftCreate
 from app.services.ai.ai_client import AIClient, AIClientError
 from app.services.ai.ai_client_factory import get_ai_client
+from app.services.ai.pipeline import (
+    PipelineContext,
+    PipelineValidationError,
+    build_job_extraction_pipeline,
+)
 
 
 class AIExtractionPipeline:
@@ -36,7 +41,13 @@ class AIExtractionPipeline:
             raise ValueError("JobDraft already exists for this RawJob")
 
         try:
-            extraction = self.ai_client.extract_job(raw_job.raw_text)
+            pipeline = build_job_extraction_pipeline(self.ai_client)
+            context = pipeline.run(PipelineContext(raw_text=raw_job.raw_text))
+
+            if context.extraction_result is None:
+                raise AIClientError("AI extraction pipeline returned no result")
+
+            extraction = context.extraction_result
 
             draft = self.job_draft_repository.create(
                 JobDraftCreate(
@@ -63,7 +74,8 @@ class AIExtractionPipeline:
 
             return draft
 
-        except AIClientError as exc:
+
+        except (AIClientError, PipelineValidationError) as exc:
             return self._create_failed_draft(
                 raw_job_id=raw_job.id,
                 message=str(exc),
