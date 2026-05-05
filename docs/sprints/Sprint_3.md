@@ -284,13 +284,13 @@ AI_TIMEOUT_SECONDS=30
 - [x] Создать `PipelineContext`
 - [x] Создать base class/interface для step
 - [x] Реализовать `CleanTextStep`
-- [ ] Реализовать `DetectLanguageStep`
+- [x] Реализовать `DetectLanguageStep`
 - [x] Реализовать `ExtractStructuredDataStep`
-- [ ] Реализовать `NormalizeFieldsStep`
+- [x] Реализовать `NormalizeFieldsStep`
 - [x] Реализовать `ValidateResultStep`
 - [x] Реализовать `JobExtractionPipeline`
 - [x] Добавить warnings/errors в context
-- [ ] Добавить unit tests для каждого step
+- [x] Добавить unit tests для каждого step
 
 ### PipelineContext
 
@@ -308,7 +308,7 @@ class PipelineContext:
 ### DoD
 
 - [x] Pipeline запускается по RawJob
-- [ ] Каждый step тестируется отдельно
+- [x] Каждый step тестируется отдельно
 - [x] AI вызов находится только в `ExtractStructuredDataStep`
 - [x] Pipeline можно расширить без переписывания service
 
@@ -508,10 +508,10 @@ class PipelineContext:
 
 ## 🧱 Epic 15 — Backend Tests
 
-- [ ] Unit test: CleanTextStep
-- [ ] Unit test: DetectLanguageStep
-- [ ] Unit test: NormalizeFieldsStep
-- [ ] Unit test: ValidateResultStep
++ [x] Unit test: CleanTextStep
++ [x] Unit test: DetectLanguageStep
++ [x] Unit test: NormalizeFieldsStep
++ [x] Unit test: ValidateResultStep
 - [ ] Unit test: AI response validation
 - [ ] Unit test: invalid JSON
 - [ ] Unit test: timeout handling
