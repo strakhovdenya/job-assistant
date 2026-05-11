@@ -5,8 +5,8 @@ from app.core.job_statuses import (
     JOB_DRAFT_STATUS_SAVED,
     RAW_JOB_STATUS_AI_DRAFTED,
     RAW_JOB_STATUS_RAW,
-    RAW_JOB_STATUS_REVIEWED,
     RAW_JOB_STATUS_STRUCTURED,
+    RAW_JOB_STATUS_FAILED,
 )
 from app.core.status_validation import (
     is_valid_job_draft_status,
@@ -16,7 +16,6 @@ from app.core.status_validation import (
 
 def test_valid_raw_job_processing_statuses():
     assert is_valid_raw_job_processing_status(RAW_JOB_STATUS_RAW)
-    assert is_valid_raw_job_processing_status(RAW_JOB_STATUS_REVIEWED)
     assert is_valid_raw_job_processing_status(RAW_JOB_STATUS_AI_DRAFTED)
     assert is_valid_raw_job_processing_status(RAW_JOB_STATUS_STRUCTURED)
 

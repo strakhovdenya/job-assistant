@@ -127,7 +127,10 @@ Pipeline:
 - Status management
 
 ### Release 0.2 — Structured Jobs
-- Extraction pipeline
+- AI extraction pipeline
+- JobDraft review/edit flow
+- Regenerate draft attempts
+- One Structured Job per RawJob
 - Normalization
 
 ### Release 0.3 — Matching MVP

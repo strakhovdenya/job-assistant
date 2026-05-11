@@ -5,6 +5,11 @@ from app.models.raw_job import RawJob
 from app.services.ai.pipeline import PipelineValidationError
 from app.services.ai.ai_client import AIClientError
 from app.services.ai.ai_extraction_pipeline import AIExtractionPipeline
+from app.core.job_statuses import (
+    JOB_DRAFT_STATUS_FAILED,
+    RAW_JOB_STATUS_FAILED,
+)
+
 
 
 class DummyAIClient:
@@ -68,7 +73,7 @@ def test_pipeline_raw_job_not_found(db: Session):
         pipeline.run(999)
 
 
-def test_pipeline_already_exists(db: Session):
+def test_pipeline_can_create_multiple_drafts_for_same_raw_job(db: Session):
     raw_job = create_raw_job(db)
 
     pipeline = AIExtractionPipeline(
@@ -76,10 +81,12 @@ def test_pipeline_already_exists(db: Session):
         ai_client=DummyAIClient(),
     )
 
-    pipeline.run(raw_job.id)
+    first_draft = pipeline.run(raw_job.id)
+    second_draft = pipeline.run(raw_job.id)
 
-    with pytest.raises(ValueError):
-        pipeline.run(raw_job.id)
+    assert first_draft.id != second_draft.id
+    assert first_draft.raw_job_id == raw_job.id
+    assert second_draft.raw_job_id == raw_job.id
 
 
 def test_pipeline_ai_error_creates_failed_draft(db: Session):
@@ -124,4 +131,46 @@ def test_pipeline_handles_pipeline_validation_error_in_ai_extraction_pipeline(
     assert draft.raw_job_id == raw_job.id
     assert draft.extraction_status == "failed"
     assert draft.ai_warnings == ["pipeline validation failed"]
+
+def test_ai_extraction_pipeline_run_handles_failed_status_update(db):
+    raw_job = create_raw_job(db)
+
+    class FailingAIClient:
+        def extract_job(self, raw_text):
+            raise AIClientError("AI failed")
+
+    pipeline = AIExtractionPipeline(
+        db=db,
+        ai_client=FailingAIClient(),
+    )
+
+    draft = pipeline.run(raw_job.id)
+
+    db.refresh(raw_job)
+
+    assert raw_job.processing_status == RAW_JOB_STATUS_FAILED
+    assert draft.raw_job_id == raw_job.id
+    assert draft.extraction_status == JOB_DRAFT_STATUS_FAILED
+    assert draft.ai_warnings == ["AI failed"]
+
+def test_ai_extraction_pipeline_run_updates_failed_status(db: Session):
+    raw_job = create_raw_job(db)
+
+    class FailingAIClient:
+        def extract_job(self, raw_text):
+            raise AIClientError("AI failed")
+
+    pipeline = AIExtractionPipeline(
+        db=db,
+        ai_client=FailingAIClient(),
+    )
+
+    draft = pipeline.run(raw_job.id)
+
+    db.refresh(raw_job)
+
+    assert raw_job.processing_status == RAW_JOB_STATUS_FAILED
+    assert draft.raw_job_id == raw_job.id
+    assert draft.extraction_status == JOB_DRAFT_STATUS_FAILED
+    assert draft.ai_warnings == ["AI failed"]
 

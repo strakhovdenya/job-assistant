@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.models.job_draft import JobDraft
@@ -16,6 +16,15 @@ class JobDraftRepository:
     def get_by_raw_job_id(self, raw_job_id: int) -> JobDraft | None:
         stmt = select(JobDraft).where(JobDraft.raw_job_id == raw_job_id)
         return self.db.execute(stmt).scalar_one_or_none()
+
+    def list_by_raw_job_id(self, raw_job_id: int) -> list[JobDraft]:
+        stmt = (
+            select(JobDraft)
+            .where(JobDraft.raw_job_id == raw_job_id)
+            .order_by(desc(JobDraft.created_at))
+        )
+
+        return list(self.db.execute(stmt).scalars().all())
 
     def create(self, data: JobDraftCreate) -> JobDraft:
         job_draft = JobDraft(**data.model_dump())

@@ -1,8 +1,8 @@
 import streamlit as st
 
-from ui.api_client import ApiClientError, list_raw_jobs
+from ui.api_client import ApiClientError, generate_ai_draft, list_raw_jobs
 from ui.components import render_raw_job_card
-from ui.state import init_state, set_selected_job_id
+from ui.state import init_state, set_selected_job_draft_id, set_selected_job_id, set_selected_raw_job_id
 
 st.set_page_config(page_title="Jobs", page_icon="📋", layout="wide")
 init_state()
@@ -42,9 +42,24 @@ try:
     for item in items:
         render_raw_job_card(item)
 
-        if st.button(f"Open RawJob #{item['id']}", key=f"open_raw_{item['id']}"):
-            set_selected_job_id(item["id"])
-            st.switch_page("pages/job_detail.py")
+        col_open, col_ai = st.columns(2)
+
+        with col_open:
+            if st.button(f"Open RawJob #{item['id']}", key=f"open_raw_{item['id']}"):
+                set_selected_raw_job_id(item["id"])
+                st.switch_page("pages/raw_job_detail.py")
+
+        with col_ai:
+            if st.button(
+                f"Generate AI Draft #{item['id']}",
+                key=f"generate_ai_draft_{item['id']}",
+            ):
+                with st.spinner("Generating AI draft..."):
+                    draft = generate_ai_draft(item["id"])
+
+                set_selected_job_draft_id(draft["id"])
+                st.success("AI draft generated.")
+                st.switch_page("pages/job_draft_edit.py")
 
 except ApiClientError as exc:
     st.error(str(exc))

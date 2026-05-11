@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from types import ModuleType
+from contextlib import contextmanager
 
 import pytest
 
@@ -50,14 +51,18 @@ class FakeStreamlit(ModuleType):
     def set_page_config(self, *args, **kwargs):
         pass
 
+
     def title(self, value):
         self.messages["write"].append(value)
 
     def subheader(self, value):
         self.messages["write"].append(value)
 
-    def write(self, value):
-        self.messages["write"].append(value)
+    def write(self, *values):
+        if len(values) == 1:
+            self.messages["write"].append(values[0])
+        else:
+            self.messages["write"].append(values)
 
     def caption(self, value):
         self.messages["caption"].append(value)
@@ -76,6 +81,13 @@ class FakeStreamlit(ModuleType):
 
     def stop(self):
         raise StopException()
+
+    @contextmanager
+    def spinner(self, text):
+        yield
+
+    def rerun(self):
+        pass
 
     def button(self, label, key=None, **kwargs):
         self.rendered_buttons.append({"label": label, "key": key})

@@ -45,7 +45,7 @@ def create_job_draft(db: Session) -> JobDraft:
 def test_get_job_draft(client, db: Session):
     draft = create_job_draft(db)
 
-    response = client.get(f"/job-drafts/{draft.id}")
+    response = client.get(f"/api/v1/job-drafts/{draft.id}")
 
     assert response.status_code == 200
 
@@ -60,7 +60,7 @@ def test_update_job_draft(client, db: Session):
     draft = create_job_draft(db)
 
     response = client.patch(
-        f"/job-drafts/{draft.id}",
+        f"/api/v1/job-drafts/{draft.id}",
         json={
             "title": "Senior Backend Developer",
             "skills": ["python", "fastapi", "postgresql"],
@@ -79,7 +79,7 @@ def test_update_job_draft(client, db: Session):
 def test_accept_job_draft(client, db: Session):
     draft = create_job_draft(db)
 
-    response = client.post(f"/job-drafts/{draft.id}/accept")
+    response = client.post(f"/api/v1/job-drafts/{draft.id}/accept")
 
     assert response.status_code == 200
 
@@ -94,10 +94,10 @@ def test_accept_job_draft(client, db: Session):
 def test_accept_job_draft_twice_returns_409(client, db: Session):
     draft = create_job_draft(db)
 
-    first_response = client.post(f"/job-drafts/{draft.id}/accept")
+    first_response = client.post(f"/api/v1/job-drafts/{draft.id}/accept")
     assert first_response.status_code == 200
 
-    second_response = client.post(f"/job-drafts/{draft.id}/accept")
+    second_response = client.post(f"/api/v1/job-drafts/{draft.id}/accept")
 
     assert second_response.status_code == 409
     assert "already accepted" in second_response.text
@@ -106,7 +106,7 @@ def test_update_job_draft_invalid_payload(client, db: Session):
     draft = create_job_draft(db)
 
     response = client.patch(
-        f"/job-drafts/{draft.id}",
+        f"/api/v1/job-drafts/{draft.id}",
         json={
             "seniority": "super-senior",
         },

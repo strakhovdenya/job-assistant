@@ -85,3 +85,37 @@ def update_job(job_id: int, data: dict[str, Any]) -> dict[str, Any]:
         timeout=15,
     )
     return _handle_response(response)
+
+# --- Job Draft API ---
+
+def generate_ai_draft(raw_job_id: int) -> dict[str, Any]:
+    response = requests.post(
+        f"{API_BASE_URL}/raw-jobs/{raw_job_id}/extract",
+        timeout=60,
+    )
+    return _handle_response(response)
+
+
+def get_job_draft(job_draft_id: int) -> dict[str, Any]:
+    response = requests.get(
+        f"{API_BASE_URL}/job-drafts/{job_draft_id}",
+        timeout=15,
+    )
+    return _handle_response(response)
+
+
+def update_job_draft(job_draft_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    response = requests.patch(
+        f"{API_BASE_URL}/job-drafts/{job_draft_id}",
+        json=data,
+        timeout=15,
+    )
+    return _handle_response(response)
+
+
+def accept_job_draft(job_draft_id: int) -> dict[str, Any]:
+    response = requests.post(
+        f"{API_BASE_URL}/job-drafts/{job_draft_id}/accept",
+        timeout=30,
+    )
+    return _handle_response(response)

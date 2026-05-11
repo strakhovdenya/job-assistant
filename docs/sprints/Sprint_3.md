@@ -163,7 +163,8 @@ saved
 ### Итоговый lifecycle
 
 ```text
-raw → reviewed → ai_drafted → structured
+raw → ai_drafted → structured
+raw → failed
 ```
 
 ### DoD
@@ -226,6 +227,10 @@ raw → reviewed → ai_drafted → structured
 - [x] Добавить обработку timeout
 - [x] Добавить обработку provider error
 - [x] Добавить fake AI client для тестов
+- [x] Добавить real OpenAI-compatible client
+- [x] Structured AI response через Pydantic schema
+- [x] Реальный AI не вызывается в unit tests
+- [x] Manual smoke test real OpenAI
 
 ### Env config
 
@@ -320,7 +325,8 @@ class PipelineContext:
 + [x] Реализовать `create`
 + [x] Реализовать `get_by_id`
 + [x] Реализовать `update`
-+ [ ] Реализовать `list_by_raw_job`
++ [x] Реализовать `list_by_raw_job`
++ [x] Поддержать несколько JobDraft для одного RawJob
 + [x] Реализовать проверку существования draft
 + [x] Добавить tests repository layer
 
@@ -346,12 +352,12 @@ class PipelineContext:
 - [ ] Не создавать Job автоматически
 + [ ] Создать `app/services/job_extraction_service.py`
 + [ ] Реализовать `create_draft_from_raw(raw_job_id)`
-+ [ ] Реализовать `regenerate_draft(raw_job_id)`
++ [x] Реализовать `regenerate_draft(raw_job_id)`
 + [ ] Подключить pipeline
 + [x] Сохранять результат pipeline как JobDraft
 + [x] Обрабатывать RawJob not found
 + [x] Обрабатывать AI failure
-+ [ ] Обновлять RawJob processing_status
++ [x] Обновлять RawJob processing_status
 + [x] Не создавать Job автоматически
 
 ### DoD
@@ -370,8 +376,9 @@ class PipelineContext:
 - [ ] Перенести поля из JobDraft в Job
 - [ ] Установить `skills_source = ai`
 - [ ] Если пользователь менял skills, установить `skills_source = mixed`
-- [ ] Обновить `JobDraft.extraction_status = saved`
-- [ ] Обновить `RawJob.processing_status = structured`
+- [x] Обновить `JobDraft.extraction_status = saved`
+- [x] Обновить `RawJob.processing_status = structured`
+- [x] Запретить создание второго Structured Job для того же RawJob
 - [ ] Защититься от повторного save одного draft
 + [ ] Расширить `job_service.py`
 + [x] Реализовать `create_job_from_draft(draft_id)` (через JobDraftService)
@@ -404,10 +411,10 @@ class PipelineContext:
 - [ ] Добавить обработку AI errors
 - [ ] Добавить API tests
 + [x] Создать или расширить routes для draft flow
-+ [ ] POST /api/v1/jobs/raw/{raw_job_id}/ai-draft
-+ [x] GET /api/v1/jobs/drafts/{draft_id}
-+ [x] PATCH /api/v1/jobs/drafts/{draft_id}
-+ [x] POST /api/v1/jobs/drafts/{draft_id}/save (accept)
++ [x] POST /api/v1/raw-jobs/{raw_job_id}/extract
++ [x] GET /api/v1/job-drafts/{draft_id}
++ [x] PATCH /api/v1/job-drafts/{draft_id}
++ [x] POST /api/v1/job-drafts/{draft_id}/accept
 + [ ] GET /api/v1/jobs/raw/{raw_job_id}/drafts
 + [x] Подключить router в `main.py`
 + [x] Добавить обработку 404
@@ -443,13 +450,10 @@ class PipelineContext:
 
 ## 🧱 Epic 12 — Raw Jobs UI
 
-- [ ] Добавить кнопку `Generate AI Draft`
-- [ ] Добавить loading state
-- [ ] Добавить success state
-- [ ] Добавить error state
-- [ ] После генерации открывать Draft Editor
-- [ ] Если draft уже существует, дать возможность открыть его
-- [ ] Добавить кнопку `Regenerate Draft` только если это безопасно
+[x] Generate AI Draft
+[x] Regenerate AI Draft
+[x] После генерации открывать Draft Editor
+[x] loading/success/error state
 
 ### DoD
 
@@ -462,22 +466,22 @@ class PipelineContext:
 
 ## 🧱 Epic 13 — AI Draft Editor UI
 
-- [ ] Создать страницу `job_draft_edit.py`
-- [ ] Загрузить draft по id
-- [ ] Показать `title`
-- [ ] Показать `company`
-- [ ] Показать `location`
-- [ ] Показать `language`
-- [ ] Показать `seniority`
-- [ ] Показать `remote_type`
-- [ ] Показать `employment_type`
-- [ ] Показать `description`
-- [ ] Показать skills editor
+- [x] Создать страницу `job_draft_edit.py`
+- [x] Загрузить draft по id
+- [x] Показать `title`
+- [x] Показать `company`
+- [x] Показать `location`
+- [x] Показать `language`
+- [x] Показать `seniority`
+- [x] Показать `remote_type`
+- [x] Показать `employment_type`
+- [x] Показать `description`
+- [x] Показать skills editor
 - [ ] Показать raw_text в expander
-- [ ] Показать AI warnings
-- [ ] Показать AI confidence
-- [ ] Добавить кнопку `Save Draft`
-- [ ] Добавить кнопку `Save as Job`
+- [x] Показать AI warnings
+- [x] Показать AI confidence
+- [x] Добавить кнопку `Save Draft`
+- [x] Добавить кнопку `Save as Job`
 - [ ] Добавить кнопку `Regenerate Draft`
 
 ### DoD
@@ -551,22 +555,23 @@ class PipelineContext:
 
 ## 🧱 Epic 16 — Frontend Tests
 
-- [ ] Test: Generate AI Draft button visible
+- [x] Test: Generate AI Draft button visible
 - [ ] Test: loading state
-- [ ] Test: error state
-- [ ] Test: Draft Editor opens
-- [ ] Test: fields prefilled
+- [x] Test: error state
+- [x] Test: Draft Editor opens
+- [x] Test: fields prefilled
 - [ ] Test: user can edit fields
 - [ ] Test: user can edit skills
-- [ ] Test: Save Draft
-- [ ] Test: Save as Job
+- [x] Test: Save Draft
+- [x] Test: Save as Job
 - [ ] Test: Job appears in Jobs List
+- [x] Regenerate AI Draft
 
 ### DoD
 
-- [ ] Frontend tests проходят
-- [ ] Старые Sprint 2 tests не сломаны
-- [ ] UI flow покрыт
+- [x] Frontend tests проходят
+- [x] Старые Sprint 2 tests не сломаны
+- [x] UI flow покрыт
 
 ---
 

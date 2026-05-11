@@ -4,6 +4,7 @@ from app.core.job_statuses import (
     JOB_DRAFT_STATUS_DRAFT,
     JOB_DRAFT_STATUS_FAILED,
     RAW_JOB_STATUS_AI_DRAFTED,
+    RAW_JOB_STATUS_FAILED,
 )
 from app.models.job_draft import JobDraft
 from app.repositories.job_draft_repository import JobDraftRepository
@@ -34,11 +35,6 @@ class AIExtractionPipeline:
 
         if raw_job is None:
             raise ValueError("RawJob not found")
-
-        existing_draft = self.job_draft_repository.get_by_raw_job_id(raw_job_id)
-
-        if existing_draft is not None:
-            raise ValueError("JobDraft already exists for this RawJob")
 
         try:
             pipeline = build_job_extraction_pipeline(self.ai_client)
@@ -75,7 +71,13 @@ class AIExtractionPipeline:
             return draft
 
 
+
         except (AIClientError, PipelineValidationError) as exc:
+            raw_job.processing_status = RAW_JOB_STATUS_FAILED
+
+            self.db.add(raw_job)
+            self.db.commit()
+
             return self._create_failed_draft(
                 raw_job_id=raw_job.id,
                 message=str(exc),
