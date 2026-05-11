@@ -36,6 +36,9 @@
 - Clean text
 - Extract structured fields
 - Validate and save
+- Human-in-the-loop JobDraft review
+- Regenerate extraction attempts
+- One final Structured Job per RawJob
 
 ### Epic 7. Normalization
 - Normalize seniority, skills, remote type, etc.

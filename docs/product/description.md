@@ -64,6 +64,13 @@ The system evolves from a simple inbox into a personalized career assistant.
   - remote format
   - job types
 
+### Current Draft-Based Processing Flow
+
+Current implementation uses a human-in-the-loop draft flow:
+```text
+RawJob → AI Extraction → JobDraft → User Review/Edit → Structured Job
+```
+
 ### 4. Job Inbox
 - List of jobs
 - Filters and sorting

@@ -1,9 +1,13 @@
 from sqlalchemy.orm import Session
 
-from app.core.job_statuses import JOB_DRAFT_STATUS_ACCEPTED
+from app.core.job_statuses import (
+    JOB_DRAFT_STATUS_SAVED,
+    RAW_JOB_STATUS_STRUCTURED,
+)
 from app.models.job import Job
 from app.models.job_draft import JobDraft
 from app.repositories.job_draft_repository import JobDraftRepository
+from app.repositories.job_repository import get_by_raw_job_id
 from app.schemas.job_draft import JobDraftUpdate
 from app.services.errors import NotFoundError, ConflictError
 
@@ -42,8 +46,13 @@ class JobDraftService:
     def accept_job_draft(self, job_draft_id: int) -> Job:
         job_draft = self.get_job_draft(job_draft_id)
 
-        if job_draft.extraction_status == JOB_DRAFT_STATUS_ACCEPTED:
+        if job_draft.extraction_status == JOB_DRAFT_STATUS_SAVED:
             raise ConflictError("JobDraft already accepted")
+
+        existing_job = get_by_raw_job_id(self.db, job_draft.raw_job_id)
+
+        if existing_job is not None:
+            raise ConflictError("Structured Job already exists for this RawJob")
 
         job = Job(
             raw_job_id=job_draft.raw_job_id,
@@ -59,10 +68,12 @@ class JobDraftService:
             description=job_draft.description,
         )
 
-        job_draft.extraction_status = JOB_DRAFT_STATUS_ACCEPTED
+        job_draft.extraction_status = JOB_DRAFT_STATUS_SAVED
+        job_draft.raw_job.processing_status = RAW_JOB_STATUS_STRUCTURED
 
         self.db.add(job)
         self.db.add(job_draft)
+        self.db.add(job_draft.raw_job)
         self.db.commit()
         self.db.refresh(job)
 

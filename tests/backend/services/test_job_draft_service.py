@@ -1,10 +1,11 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.core.job_statuses import JOB_DRAFT_STATUS_ACCEPTED
+from app.core.job_statuses import JOB_DRAFT_STATUS_SAVED
 from app.models.job_draft import JobDraft
 from app.models.raw_job import RawJob
 from app.services.job_draft_service import JobDraftService
+from app.services.errors import ConflictError
 
 
 def create_raw_job(db: Session) -> RawJob:
@@ -21,8 +22,9 @@ def create_raw_job(db: Session) -> RawJob:
     return raw_job
 
 
-def create_job_draft(db: Session) -> JobDraft:
-    raw_job = create_raw_job(db)
+def create_job_draft(db: Session, raw_job: RawJob | None = None) -> JobDraft:
+    if raw_job is None:
+        raw_job = create_raw_job(db)
 
     draft = JobDraft(
         raw_job_id=raw_job.id,
@@ -112,7 +114,7 @@ def test_accept_job_draft_marks_draft_as_accepted(db: Session):
 
     refreshed = service.get_job_draft(draft.id)
 
-    assert refreshed.extraction_status == JOB_DRAFT_STATUS_ACCEPTED
+    assert refreshed.extraction_status == JOB_DRAFT_STATUS_SAVED
 
 
 def test_accept_job_draft_twice_fails(db: Session):
@@ -164,3 +166,17 @@ def test_accept_job_draft_raises_for_nonexistent_draft(db: Session):
 
     with pytest.raises(ValueError):
         service.accept_job_draft(999)
+
+def test_job_draft_service_accept_job_draft_conflict_if_existing_job(db: Session):
+    raw_job = create_raw_job(db)
+    first_draft = create_job_draft(db, raw_job=raw_job)
+    second_draft = create_job_draft(db, raw_job=raw_job)
+
+    service = JobDraftService(db)
+
+    first_job = service.accept_job_draft(first_draft.id)
+
+    assert first_job.raw_job_id == raw_job.id
+
+    with pytest.raises(ConflictError):
+        service.accept_job_draft(second_draft.id)

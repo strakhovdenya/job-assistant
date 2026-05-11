@@ -2,7 +2,10 @@ from app.services.ai.ai_client import FakeAIClient, OpenAICompatibleAIClient
 from app.services.ai.ai_client_factory import get_ai_client
 
 
-def test_ai_client_factory_returns_fake_client_by_default():
+def test_ai_client_factory_returns_fake_client_by_default(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("AI_PROVIDER", "fake")
+
     client = get_ai_client()
 
     assert isinstance(client, FakeAIClient)

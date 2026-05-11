@@ -26,6 +26,12 @@ def create_from_raw(db: Session, raw_job: RawJob) -> Job:
 def get_by_id(db: Session, job_id: int) -> Job | None:
     return db.query(Job).filter(Job.id == job_id).first()
 
+def get_by_raw_job_id(db: Session, raw_job_id: int) -> Job | None:
+    return (
+        db.query(Job)
+        .filter(Job.raw_job_id == raw_job_id)
+        .first()
+    )
 
 def list_jobs(db: Session) -> list[Job]:
     return db.query(Job).order_by(Job.created_at.desc()).all()
