@@ -265,6 +265,14 @@ uv run --package frontend streamlit run apps/frontend/app.py
 
 ---
 
+### MCP test server
+
+For local/AI-assisted test automation, this project can be connected to a dedicated MCP server:
+
+- repository: `strakhovdenya/run-test-job-assistant-mcp`
+- purpose: expose safe commands for running Job Assistant checks from an AI assistant
+- docs: `Docs/mcp-test-server.md`
+
 ## ⚠️ Environment Variables
 
 Для работы AI-скриптов требуется переменная окружения:

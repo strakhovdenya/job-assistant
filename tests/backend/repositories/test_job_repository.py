@@ -64,7 +64,7 @@ def test_create_from_raw_keeps_raw_job_processing_status_unchanged(
     db.refresh(raw_job)
 
     assert raw_job.processing_status == "raw"
-
+ 
 
 def test_get_by_id_returns_job_if_exists(db: Session, raw_job: RawJob) -> None:
     job = create_from_raw(db, raw_job)
