@@ -36,6 +36,8 @@ Use the narrowest safe MCP command for the user's request:
 - If PostgreSQL must be started, call `run_tests(command="test_db_up")`.
 - Do not use arbitrary shell commands for test execution.
 
+Project-level ChatGPT behavior is documented separately in `docs/project_instructions_for_GPT.md`.
+
 ## ChatGPT App widget flow
 
 The widget flow is polling-based because ChatGPT does not stream arbitrary long-running tool output directly into a message while the tool is still running.
@@ -48,33 +50,6 @@ Expected flow:
 4. The widget polls `get_test_suite_status(run_id)` every second.
 5. The widget renders status, progress bar and logs.
 6. Polling stops when status is `passed` or `failed`.
-
-## Suggested ChatGPT Project Settings
-
-Paste the following into the ChatGPT project instructions. It is intentionally short and below the 8000 character limit.
-
-```text
-This project is for `strakhovdenya/job-assistant`.
-
-Use the MCP server `strakhovdenya/run-test-job-assistant-mcp` for Job Assistant checks.
-
-When the user asks to run the full Job Assistant test suite with visible progress, logs, a panel, UI, or widget, call `open_test_runner_widget`.
-
-The widget handles the long-running flow itself: it calls `start_full_test_suite`, then polls `get_test_suite_status(run_id)` until the run is `passed` or `failed`.
-
-Do not call `start_full_test_suite` directly in normal chat unless a widget or polling flow is already active.
-
-For targeted checks, use the allowlisted MCP test tool:
-- backend only: `run_tests(command="test_backend")`
-- frontend only: `run_tests(command="test_frontend")`
-- PostgreSQL dependency: `run_tests(command="test_db_up")`
-
-Use `run_full_test_suite` only when the user explicitly wants a synchronous full-suite result without widget progress.
-
-Do not use arbitrary shell commands for tests. Prefer the allowlisted MCP tools.
-
-If tests fail, summarize the failed step, exit code, relevant stdout/stderr, and suggest the next code or test fix.
-```
 
 ## Related repository
 
