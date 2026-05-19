@@ -271,7 +271,7 @@ For local/AI-assisted test automation, this project can be connected to a dedica
 
 - repository: `strakhovdenya/run-test-job-assistant-mcp`
 - purpose: expose safe commands for running Job Assistant checks from an AI assistant
-- docs: `Docs/mcp-test-server.md`
+- docs: `docs/mcp-test-server.md`
 
 ## ⚠️ Environment Variables
 
